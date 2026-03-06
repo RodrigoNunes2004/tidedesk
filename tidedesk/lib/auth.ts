@@ -80,7 +80,11 @@ export const authOptions: NextAuthOptions = {
         const user = (await prisma.user.findUnique({
           where: { id: token.sub ?? "" },
         })) as { avatarUrl?: string | null } | null;
-        const avatarUrl = user?.avatarUrl ?? null;
+        let avatarUrl = user?.avatarUrl ?? null;
+        // On Vercel, /avatars/* paths point to ephemeral storage that doesn't persist
+        if (avatarUrl?.startsWith("/avatars/") && process.env.VERCEL) {
+          avatarUrl = null;
+        }
         if (avatarUrl) {
           session.user.image = avatarUrl;
         } else if (token.email) {

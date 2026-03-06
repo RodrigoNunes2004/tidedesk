@@ -72,6 +72,15 @@ export async function POST(req: Request) {
       );
     }
   } else {
+    if (process.env.VERCEL) {
+      return NextResponse.json(
+        {
+          error:
+            "Avatar storage is not configured. Add BLOB_READ_WRITE_TOKEN in your Vercel project Storage settings.",
+        },
+        { status: 503 }
+      );
+    }
     const avatarsDir = path.join(process.cwd(), "public", "avatars");
     try {
       await mkdir(avatarsDir, { recursive: true });
