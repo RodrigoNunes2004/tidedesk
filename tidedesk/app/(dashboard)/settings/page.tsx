@@ -7,10 +7,23 @@ import { BillingSection } from "@/components/settings/billing-section";
 import { IntegrationsSection } from "@/components/settings/integrations-section";
 import { InstructorsSection } from "@/components/settings/instructors-section";
 import { PaymentSettingsForm } from "@/components/settings/payment-settings-form";
+import { StripeConnectSection } from "@/components/settings/stripe-connect-section";
 import { prisma } from "@/lib/prisma";
 import { Building2, CreditCard, DollarSign, Plug, User, Users } from "lucide-react";
 
-export default async function SettingsPage() {
+type SearchParams = Promise<{ tab?: string; stripe_connected?: string; error?: string }>;
+
+export default async function SettingsPage({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  const defaultTab =
+    params.tab === "payment" ||
+    params.tab === "integrations" ||
+    params.tab === "billing" ||
+    params.tab === "profile" ||
+    params.tab === "instructors" ||
+    params.tab === "account"
+      ? params.tab
+      : "account";
   const session = await requireSession();
   const businessId = session.user.businessId;
 
@@ -30,7 +43,7 @@ export default async function SettingsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="account" className="space-y-4">
+      <Tabs defaultValue={defaultTab} className="space-y-4">
         <TabsList className="grid w-full max-w-3xl grid-cols-2 sm:grid-cols-6">
           <TabsTrigger value="account" className="flex items-center gap-2">
             <User className="size-4" />
@@ -124,6 +137,14 @@ export default async function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="payment" className="space-y-4">
+          <StripeConnectSection
+            stripeAccountId={business.stripeAccountId}
+            chargesEnabled={business.chargesEnabled}
+            payoutsEnabled={business.payoutsEnabled}
+            detailsSubmitted={business.detailsSubmitted}
+            stripeConnected={params.stripe_connected === "1"}
+            connectError={params.error}
+          />
           <Card>
             <CardHeader>
               <CardTitle>Payment Settings</CardTitle>

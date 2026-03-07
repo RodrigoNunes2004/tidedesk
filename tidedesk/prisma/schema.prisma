@@ -19,6 +19,12 @@ model Business {
   logoUrl            String?
   defaultPaymentMethod PaymentMethod? @default(CASH)
 
+  // Stripe Connect (Phase 2 – accept card payments)
+  stripeAccountId    String?
+  chargesEnabled     Boolean   @default(false)
+  payoutsEnabled      Boolean   @default(false)
+  detailsSubmitted    Boolean   @default(false)
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

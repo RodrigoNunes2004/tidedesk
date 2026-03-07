@@ -156,10 +156,14 @@ export function IntegrationsSection() {
         </form>
       </div>
 
-      <div className="rounded-lg border border-dashed p-4">
-        <h3 className="font-medium text-muted-foreground">Stripe</h3>
+      <div className="rounded-lg border p-4">
+        <h3 className="font-medium">Stripe Connect</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Coming soon. Direct payments and Stripe Terminal support.
+          Accept card payments from customers. Configure in{" "}
+          <a href="/settings?tab=payment" className="text-primary underline hover:no-underline">
+            Settings → Payment
+          </a>
+          .
         </p>
       </div>
     </div>
