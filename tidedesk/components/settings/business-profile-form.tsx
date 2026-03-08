@@ -84,7 +84,7 @@ export function BusinessProfileForm({ business }: { business: Business }) {
           {error}
         </div>
       )}
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2 sm:items-start">
         <div className="grid gap-2">
           <Label htmlFor="latitude">Latitude (weather alerts)</Label>
           <Input
@@ -113,6 +113,9 @@ export function BusinessProfileForm({ business }: { business: Business }) {
             onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))}
             placeholder="176.185"
           />
+          <p className="text-xs text-muted-foreground">
+            Mount Maunganui ≈ 176.185
+          </p>
         </div>
       </div>
       <div className="grid gap-2">
