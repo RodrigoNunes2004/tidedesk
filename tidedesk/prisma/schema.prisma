@@ -40,6 +40,7 @@ model Business {
   payments     Payment[]
   integrations Integration[]
   subscription Subscription?
+  notifications Notification[]
 }
 
 model User {
@@ -361,4 +362,39 @@ model Subscription {
 
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  business    Business @relation(fields: [businessId], references: [id])
+  businessId  String
+
+  type        NotificationType
+  channel     NotificationChannel
+  recipient   String
+  content     String   @db.Text
+  status      NotificationStatus @default(PENDING)
+  sentAt      DateTime?
+  metadata    String?  @db.Text // JSON
+
+  createdAt   DateTime @default(now())
+
+  @@index([businessId, type])
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMATION
+  BOOKING_REMINDER
+  WEATHER_ALERT
+}
+
+enum NotificationChannel {
+  SMS
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
 }

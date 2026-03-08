@@ -83,13 +83,13 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
       .finally(() => setLoading(false));
   }, [businessSlug]);
 
+  const canFetchSlots = !!(lessonId && date && data?.hasInstructors);
+  const displaySlots = canFetchSlots ? slots : [];
+  const displaySlot = canFetchSlots ? slot : null;
+
   useEffect(() => {
-    if (!lessonId || !date || !data?.hasInstructors) {
-      setSlots([]);
-      setSlot(null);
-      return;
-    }
-    setSlotsLoading(true);
+    if (!canFetchSlots) return;
+    queueMicrotask(() => setSlotsLoading(true));
     fetch(
       `/api/public/schools/${businessSlug}/slots?lessonId=${encodeURIComponent(lessonId)}&date=${encodeURIComponent(date)}`
     )
@@ -104,13 +104,13 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
         setSlots([]);
       })
       .finally(() => setSlotsLoading(false));
-  }, [businessSlug, lessonId, date, data?.hasInstructors]);
+  }, [businessSlug, lessonId, date, canFetchSlots]);
 
   const selectedLesson = data?.lessons.find((l) => l.id === lessonId);
   const minDate = new Date().toISOString().slice(0, 10);
 
   function canAdvance() {
-    if (step === 1) return !!lessonId && !!date && !!slot;
+    if (step === 1) return !!lessonId && !!date && !!displaySlot;
     if (step === 2)
       return (
         firstName.trim() &&
@@ -313,13 +313,13 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
                 <Loader2 className="size-4 animate-spin" />
                 Loading available slots…
               </div>
-            ) : slots.length === 0 && (lessonId && date) ? (
+            ) : displaySlots.length === 0 && canFetchSlots ? (
               <p className="text-sm text-muted-foreground">
                 No slots available for this date. Try another date.
               </p>
             ) : (
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {slots.map((s) => {
+                {displaySlots.map((s) => {
                   const start = new Date(s.start);
                   const label = start.toLocaleTimeString([], {
                     hour: "2-digit",
@@ -329,7 +329,7 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
                     <Button
                       key={s.start}
                       type="button"
-                      variant={slot?.start === s.start ? "default" : "outline"}
+                      variant={displaySlot?.start === s.start ? "default" : "outline"}
                       size="sm"
                       className="text-sm"
                       onClick={() => setSlot(s)}
@@ -474,7 +474,7 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
         <div className="text-sm text-muted-foreground">
-          {selectedLesson && slot && (
+          {selectedLesson && displaySlot && (
             <span>
               {selectedLesson.title} × {participants} ={" "}
               <strong>

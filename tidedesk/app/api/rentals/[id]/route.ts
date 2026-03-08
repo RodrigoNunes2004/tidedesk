@@ -139,13 +139,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   if (status === RentalStatus.CANCELLED) {
-    if (current.status !== RentalStatus.ACTIVE) {
+    const cancellableStatuses: RentalStatus[] = [
+      RentalStatus.PENDING,
+      RentalStatus.ACTIVE,
+    ];
+    if (!cancellableStatuses.includes(current.status)) {
       return NextResponse.json(
-        { error: "Only active rentals can be cancelled." },
+        { error: "Only pending or active rentals can be cancelled." },
         { status: 400 },
       );
     }
-    if (current.startAt <= now) {
+    if (
+      current.status === RentalStatus.ACTIVE &&
+      current.startAt <= now
+    ) {
       return NextResponse.json(
         { error: "Only rentals that haven't started can be cancelled." },
         { status: 400 },

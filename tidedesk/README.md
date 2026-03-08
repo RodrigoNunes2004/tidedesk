@@ -53,6 +53,7 @@ Built with Next.js 16, React 19, Tailwind, shadcn/ui, Prisma, PostgreSQL (Neon),
 1. Install dependencies: `npm install`
 2. Set up env vars (see `.env.example`):
    - `DATABASE_URL` — Neon PostgreSQL connection string
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` — optional, for SMS (booking confirmation + 24h reminders)
    - `NEXTAUTH_SECRET` — NextAuth secret (required)
    - `NEXTAUTH_URL` — App URL (e.g. `http://localhost:3000`, required for production)
    - `NEXT_PUBLIC_APP_URL` — App URL (Stripe redirects)

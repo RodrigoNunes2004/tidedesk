@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
+import { sendNotification } from "@/modules/notifications/notificationService";
 
 const ACTIVE_BOOKING_STATUSES = ["BOOKED", "CHECKED_IN"] as ("BOOKED" | "CHECKED_IN")[];
 
@@ -147,7 +148,8 @@ export async function POST(
     : "ONLINE";
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
+    type TxResult = { booking: { id: string; startAt: Date; endAt: Date; participants: number }; customer: { id: string; firstName: string; lastName: string; phone: string | null } };
+    const result = await prisma.$transaction(async (tx): Promise<TxResult> => {
       // Re-validate availability inside transaction to prevent race conditions
       const instructorOverlap = await tx.booking.findFirst({
         where: {
@@ -284,6 +286,26 @@ export async function POST(
         customer,
       };
     });
+
+    const phone = (result.customer as { phone?: string | null }).phone?.trim();
+    if (phone) {
+      try {
+        const start = new Date(result.booking.startAt);
+        const timeStr = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const dateStr = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+        const content = `${business.name}: Your ${lesson.title} is confirmed for ${dateStr} at ${timeStr}. See you then!`;
+        await sendNotification({
+          businessId: business.id,
+          type: "BOOKING_CONFIRMATION",
+          channel: "SMS",
+          recipient: phone,
+          content,
+          metadata: { bookingId: result.booking.id },
+        });
+      } catch (e) {
+        console.error("Booking confirmation SMS failed:", e);
+      }
+    }
 
     return Response.json(
       {

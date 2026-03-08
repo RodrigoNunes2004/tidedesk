@@ -36,14 +36,13 @@ export function ConfirmationContent({
   const [data, setData] = useState<ConfirmationData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const hasParams = !!(bookingId || sessionId);
+
   useEffect(() => {
+    if (!hasParams) return;
     const q = new URLSearchParams();
     if (bookingId) q.set("bookingId", bookingId);
     if (sessionId) q.set("session_id", sessionId);
-    if (!bookingId && !sessionId) {
-      setError("No booking or session provided");
-      return;
-    }
     fetch(`/api/public/schools/${businessSlug}/confirmation?${q}`)
       .then((r) => r.json())
       .then((d) => {
@@ -53,13 +52,15 @@ export function ConfirmationContent({
       .catch((e) =>
         setError(e instanceof Error ? e.message : "Failed to load confirmation")
       );
-  }, [businessSlug, bookingId, sessionId]);
+  }, [businessSlug, bookingId, sessionId, hasParams]);
 
-  if (error) {
+  if (!hasParams || error) {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-destructive">{error}</p>
+          <p className="text-destructive">
+            {!hasParams ? "No booking or session provided" : error}
+          </p>
         </CardContent>
       </Card>
     );

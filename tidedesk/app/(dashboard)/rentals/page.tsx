@@ -256,7 +256,8 @@ export default async function RentalsPage({
                 {rentals.map((r) => {
                   const status = String(r.status);
                   const canCancel =
-                    (status === RENTAL_STATUS.ACTIVE || status === RENTAL_STATUS.PENDING) && r.startAt > now;
+                    status === RENTAL_STATUS.PENDING ||
+                    (status === RENTAL_STATUS.ACTIVE && r.startAt > now);
                   const canReturn =
                     status === RENTAL_STATUS.ACTIVE ||
                     status === RENTAL_STATUS.OVERDUE;
