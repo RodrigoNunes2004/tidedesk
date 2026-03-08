@@ -100,7 +100,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <BusinessProfileForm business={business} />
+              <BusinessProfileForm
+                business={{
+                  ...business,
+                  latitude: business.latitude != null ? Number(business.latitude) : null,
+                  longitude: business.longitude != null ? Number(business.longitude) : null,
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>

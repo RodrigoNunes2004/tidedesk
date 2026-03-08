@@ -13,6 +13,8 @@ const ALLOWED_KEYS = [
   "currency",
   "logoUrl",
   "defaultPaymentMethod",
+  "latitude",
+  "longitude",
 ] as const;
 
 const VALID_PAYMENT_METHODS = Object.values(PaymentMethod);
@@ -76,6 +78,32 @@ export async function PATCH(req: NextRequest) {
       )
     ) {
       data[key] = typeof val === "string" ? val.trim() || null : null;
+    } else if (key === "latitude") {
+      if (val === null || val === "") {
+        data[key] = null;
+      } else {
+        const n = typeof val === "number" ? val : Number(val);
+        if (!Number.isFinite(n) || n < -90 || n > 90) {
+          return NextResponse.json(
+            { error: "latitude must be a number between -90 and 90." },
+            { status: 400 },
+          );
+        }
+        data[key] = n;
+      }
+    } else if (key === "longitude") {
+      if (val === null || val === "") {
+        data[key] = null;
+      } else {
+        const n = typeof val === "number" ? val : Number(val);
+        if (!Number.isFinite(n) || n < -180 || n > 180) {
+          return NextResponse.json(
+            { error: "longitude must be a number between -180 and 180." },
+            { status: 400 },
+          );
+        }
+        data[key] = n;
+      }
     }
   }
 
