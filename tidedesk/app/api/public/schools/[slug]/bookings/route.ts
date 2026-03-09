@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
 import { sendNotification } from "@/modules/notifications/notificationService";
+import { notificationService } from "@/services/notificationService";
 
 const ACTIVE_BOOKING_STATUSES = ["BOOKED", "CHECKED_IN"] as ("BOOKED" | "CHECKED_IN")[];
 
@@ -288,6 +289,8 @@ export async function POST(
     });
 
     const phone = (result.customer as { phone?: string | null }).phone?.trim();
+    const customerEmail = (result.customer as { email?: string | null }).email?.trim();
+
     if (phone) {
       try {
         const start = new Date(result.booking.startAt);
@@ -304,6 +307,14 @@ export async function POST(
         });
       } catch (e) {
         console.error("Booking confirmation SMS failed:", e);
+      }
+    }
+
+    if (customerEmail) {
+      try {
+        await notificationService.sendBookingConfirmation(result.booking.id);
+      } catch (e) {
+        console.error("Booking confirmation email failed:", e);
       }
     }
 

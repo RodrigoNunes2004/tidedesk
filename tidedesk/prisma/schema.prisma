@@ -397,6 +397,7 @@ model Notification {
   status      NotificationStatus @default(PENDING)
   sentAt      DateTime?
   metadata    String?  @db.Text // JSON
+  error       String?  @db.Text // Store failure reason for debugging
 
   createdAt   DateTime @default(now())
 
@@ -407,6 +408,7 @@ enum NotificationType {
   BOOKING_CONFIRMATION
   BOOKING_REMINDER
   WEATHER_ALERT
+  PAYMENT_RECEIPT
 }
 
 enum NotificationChannel {

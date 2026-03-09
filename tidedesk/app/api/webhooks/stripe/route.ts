@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import type { Prisma } from "@prisma/client";
 import { RentalStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { notificationService } from "@/services/notificationService";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
             where: { stripePaymentIntentId: paymentIntent.id },
           });
           if (!existing) {
-            await prisma.payment.create({
+            const payment = await prisma.payment.create({
               data: {
                 businessId: resolvedBusinessId,
                 amount: (paymentIntent.amount ?? 0) / 100,
@@ -107,6 +108,11 @@ export async function POST(req: NextRequest) {
                 where: { id: rentalId, status: "PENDING" as RentalStatus },
                 data: { status: RentalStatus.ACTIVE },
               });
+            }
+            try {
+              await notificationService.sendPaymentReceipt(payment.id);
+            } catch (e) {
+              console.error("Payment receipt email failed:", e);
             }
           }
         }
@@ -168,7 +174,7 @@ export async function POST(req: NextRequest) {
             where: { stripePaymentIntentId: pi },
           });
           if (!existing) {
-            await prisma.payment.create({
+            const payment = await prisma.payment.create({
               data: {
                 businessId: resolvedBusinessId,
                 amount: (session.amount_total ?? 0) / 100,
@@ -187,6 +193,11 @@ export async function POST(req: NextRequest) {
                 where: { id: rentalId, status: "PENDING" as RentalStatus },
                 data: { status: RentalStatus.ACTIVE },
               });
+            }
+            try {
+              await notificationService.sendPaymentReceipt(payment.id);
+            } catch (e) {
+              console.error("Payment receipt email failed:", e);
             }
           }
         }

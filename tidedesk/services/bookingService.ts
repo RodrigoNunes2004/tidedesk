@@ -18,7 +18,8 @@ export const bookingService = {
       include: {
         customer: true,
         lesson: true,
-        business: { select: { id: true, name: true } },
+        instructor: true,
+        business: { select: { id: true, name: true, slug: true, address: true, location: true, contactEmail: true } },
       },
     });
   },
