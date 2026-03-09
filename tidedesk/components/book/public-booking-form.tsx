@@ -323,7 +323,7 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
                   className="grid max-h-44 grid-cols-4 gap-2 overflow-y-scroll rounded-md border border-input p-2 sm:grid-cols-5"
                   style={{
                     scrollbarWidth: "thin",
-                    MsOverflowStyle: "scrollbar",
+                    msOverflowStyle: "scrollbar",
                   }}
                 >
                   {displaySlots.map((s) => {
