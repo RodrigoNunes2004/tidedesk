@@ -318,26 +318,35 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
                 No slots available for this date. Try another date.
               </p>
             ) : (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {displaySlots.map((s) => {
-                  const start = new Date(s.start);
-                  const label = start.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
-                  return (
-                    <Button
-                      key={s.start}
-                      type="button"
-                      variant={displaySlot?.start === s.start ? "default" : "outline"}
-                      size="sm"
-                      className="text-sm"
-                      onClick={() => setSlot(s)}
-                    >
-                      {label}
-                    </Button>
-                  );
-                })}
+              <div className="flex max-h-32 flex-col gap-2">
+                <div className="overflow-x-auto overflow-y-auto rounded-md border border-input">
+                  <div className="flex min-w-max flex-wrap gap-2 p-2">
+                    {displaySlots.map((s) => {
+                      const start = new Date(s.start);
+                      const tz = data?.business?.timezone ?? "Pacific/Auckland";
+                      const label = start.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: tz,
+                      });
+                      return (
+                        <Button
+                          key={s.start}
+                          type="button"
+                          variant={displaySlot?.start === s.start ? "default" : "outline"}
+                          size="sm"
+                          className="shrink-0 text-sm"
+                          onClick={() => setSlot(s)}
+                        >
+                          {label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Times shown in {data?.business?.timezone ?? "Pacific/Auckland"}
+                </p>
               </div>
             )}
           </div>

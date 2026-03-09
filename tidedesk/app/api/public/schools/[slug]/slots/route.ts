@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
+import { fromZonedTime } from "date-fns-tz";
 import { prisma } from "@/lib/prisma";
 
 const ACTIVE_BOOKING_STATUSES = ["BOOKED", "CHECKED_IN"] as ("BOOKED" | "CHECKED_IN")[];
-const DEFAULT_START_HOUR = 8;
-const DEFAULT_END_HOUR = 18;
+// Surf-friendly hours: 7am–5pm in the business's local timezone (daylight considered)
+const SLOT_START_HOUR = 7;
+const SLOT_END_HOUR = 17; // last slot ends at 5pm
 
 /**
  * GET /api/public/schools/[slug]/slots?lessonId=&date=
@@ -27,10 +29,12 @@ export async function GET(
 
   const business = await prisma.business.findUnique({
     where: { slug: slug.trim() },
+    select: { id: true, timezone: true },
   });
   if (!business) {
     return Response.json({ error: "School not found" }, { status: 404 });
   }
+  const tz = business.timezone?.trim() || "Pacific/Auckland";
 
   const lesson = await prisma.lesson.findFirst({
     where: { id: lessonId, businessId: business.id },
@@ -55,11 +59,15 @@ export async function GET(
     );
   }
 
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const day = date.getDate();
-  const dayStart = new Date(year, month, day, DEFAULT_START_HOUR, 0, 0);
-  const dayEnd = new Date(year, month, day, DEFAULT_END_HOUR, 0, 0);
+  // Build day range in the business's timezone (7am–5pm local)
+  const dayStart = fromZonedTime(
+    `${dateStr}T${String(SLOT_START_HOUR).padStart(2, "0")}:00:00`,
+    tz
+  );
+  const dayEnd = fromZonedTime(
+    `${dateStr}T${String(SLOT_END_HOUR).padStart(2, "0")}:00:00`,
+    tz
+  );
 
   const now = new Date();
   const durationMinutes = lesson.durationMinutes ?? 60;
