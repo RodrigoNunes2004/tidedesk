@@ -318,9 +318,12 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
                 No slots available for this date. Try another date.
               </p>
             ) : (
-              <div className="flex max-h-32 flex-col gap-2">
-                <div className="overflow-x-auto overflow-y-auto rounded-md border border-input">
-                  <div className="flex min-w-max flex-wrap gap-2 p-2">
+              <div className="flex flex-col gap-2">
+                <div
+                  className="w-full max-w-full overflow-x-scroll overflow-y-hidden rounded-md border border-input pb-1"
+                  style={{ scrollbarGutter: "stable" }}
+                >
+                  <div className="flex flex-nowrap gap-2 p-2">
                     {displaySlots.map((s) => {
                       const start = new Date(s.start);
                       const tz = data?.business?.timezone ?? "Pacific/Auckland";
@@ -344,9 +347,14 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
                     })}
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Times shown in {data?.business?.timezone ?? "Pacific/Auckland"}
-                </p>
+                <div className="flex flex-wrap items-center justify-between gap-1 text-xs text-muted-foreground">
+                  <span>
+                    Times shown in {data?.business?.timezone ?? "Pacific/Auckland"}
+                  </span>
+                  {displaySlots.length > 6 && (
+                    <span>← Scroll for more →</span>
+                  )}
+                </div>
               </div>
             )}
           </div>
