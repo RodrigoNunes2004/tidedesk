@@ -15,6 +15,8 @@ const PAYMENT_METHODS = [
 type Business = {
   id: string;
   defaultPaymentMethod?: string | null;
+  stripeAccountId?: string | null;
+  chargesEnabled?: boolean;
 };
 
 export function PaymentSettingsForm({ business }: { business: Business }) {
@@ -46,12 +48,19 @@ export function PaymentSettingsForm({ business }: { business: Business }) {
     }
   }
 
+  const canAcceptCards = !!(business.stripeAccountId && business.chargesEnabled);
+
   return (
     <form onSubmit={onSubmit} className="grid gap-4 max-w-xl">
       {error && (
         <div className="rounded-md bg-destructive/10 text-destructive px-3 py-2 text-sm">
           {error}
         </div>
+      )}
+      {!canAcceptCards && (
+        <p className="text-sm text-muted-foreground rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-3 py-2">
+          Connect Stripe above to accept card payments online. This setting applies to manual cash/EFTPOS entries.
+        </p>
       )}
       <div className="grid gap-2">
         <Label>Default payment method</Label>

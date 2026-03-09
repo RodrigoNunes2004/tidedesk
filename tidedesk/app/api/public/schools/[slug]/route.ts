@@ -72,7 +72,7 @@ export async function GET(
       currency: business.currency ?? "NZD",
       logoUrl: business.logoUrl,
       canAcceptPayments: Boolean(
-        business.stripeAccountId && business.chargesEnabled
+        business.stripeAccountId && business.chargesEnabled && business.payoutsEnabled
       ),
       onlineBookingEnabled: biz.onlineBookingEnabled ?? true,
       onlineBookingMessage: (biz.onlineBookingMessage ? String(biz.onlineBookingMessage).trim() : "") || null,

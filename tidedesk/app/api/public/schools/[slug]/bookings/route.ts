@@ -4,12 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { PaymentMethod } from "@prisma/client";
 import { sendNotification } from "@/modules/notifications/notificationService";
 import { notificationService } from "@/services/notificationService";
+import { getIdempotencyResult, setIdempotencyResult } from "@/lib/idempotency";
 
 const ACTIVE_BOOKING_STATUSES = ["BOOKED", "CHECKED_IN"] as ("BOOKED" | "CHECKED_IN")[];
 
 /**
  * POST /api/public/schools/[slug]/bookings
  * Public endpoint – creates customer (if new) + booking.
+ * Supports Idempotency-Key header or idempotencyKey in body to prevent duplicate bookings on retry.
  */
 export async function POST(
   req: NextRequest,
@@ -28,6 +30,17 @@ export async function POST(
   }
 
   const b = body as Record<string, unknown>;
+  const idemKey =
+    (typeof b.idempotencyKey === "string" && b.idempotencyKey.trim()) ||
+    req.headers.get("idempotency-key")?.trim() ||
+    null;
+
+  if (idemKey) {
+    const cached = await getIdempotencyResult(slug.trim(), idemKey);
+    if (cached) {
+      return Response.json(cached.body, { status: cached.status });
+    }
+  }
   const lessonId = typeof b.lessonId === "string" ? b.lessonId.trim() : "";
   const startAt =
     typeof b.startAt === "string" && b.startAt.trim()
@@ -327,26 +340,29 @@ export async function POST(
       // For pay-now: confirmation email is sent from Stripe webhook after payment
     }
 
-    return Response.json(
-      {
-        booking: {
-          id: result.booking.id,
-          startAt: result.booking.startAt,
-          endAt: result.booking.endAt,
-          participants: result.booking.participants,
-        },
-        lesson: {
-          title: lesson.title,
-          durationMinutes,
-          price: Number(lesson.price),
-        },
-        customer: {
-          firstName: result.customer.firstName,
-          lastName: result.customer.lastName,
-        },
+    const successBody = {
+      booking: {
+        id: result.booking.id,
+        startAt: result.booking.startAt,
+        endAt: result.booking.endAt,
+        participants: result.booking.participants,
       },
-      { status: 201 }
-    );
+      lesson: {
+        title: lesson.title,
+        durationMinutes,
+        price: Number(lesson.price),
+      },
+      customer: {
+        firstName: result.customer.firstName,
+        lastName: result.customer.lastName,
+      },
+    };
+
+    if (idemKey) {
+      await setIdempotencyResult(slug.trim(), idemKey, 201, successBody);
+    }
+
+    return Response.json(successBody, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("Public booking error:", err);

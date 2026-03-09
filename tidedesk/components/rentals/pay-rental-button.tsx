@@ -14,8 +14,10 @@ export function PayRentalButton({
   disabled?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handlePay() {
+    setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/payments/stripe/checkout/rental", {
@@ -25,7 +27,7 @@ export function PayRentalButton({
       });
       const data = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
       if (!res.ok) {
-        alert(data?.error ?? "Failed to create payment link");
+        setError(data?.error ?? "Failed to create payment link");
         return;
       }
       if (data?.url) {
@@ -37,15 +39,20 @@ export function PayRentalButton({
   }
 
   return (
-    <Button
-      variant="default"
-      size="sm"
-      onClick={handlePay}
-      disabled={disabled || loading}
-      className="gap-1.5"
-    >
-      <CreditCard className="size-3.5" />
-      {loading ? "Redirecting…" : `Pay ${amount}`}
-    </Button>
+    <div className="flex flex-col items-end gap-1">
+      <Button
+        variant="default"
+        size="sm"
+        onClick={handlePay}
+        disabled={disabled || loading}
+        className="gap-1.5"
+      >
+        <CreditCard className="size-3.5" />
+        {loading ? "Redirecting…" : `Pay ${amount}`}
+      </Button>
+      {error && (
+        <span className="text-xs text-destructive max-w-[200px] text-right">{error}</span>
+      )}
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BookingStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { formatCurrency } from "@/lib/currency";
 import { requireSession } from "@/lib/server/session";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,9 +57,10 @@ export default async function BookingsPage({
           : [BookingStatus.BOOKED, BookingStatus.CHECKED_IN];
 
   const [business, customers, lessons, instructors, categories, variants, bookings] = await Promise.all([
-    (prisma.business.findUnique({
+    prisma.business.findUnique({
       where: { id: businessId },
-    }) as Promise<{ chargesEnabled: boolean; stripeAccountId: string | null } | null>),
+      select: { chargesEnabled: true, stripeAccountId: true, currency: true },
+    }),
     prisma.customer.findMany({
       where: { businessId, archivedAt: null } as never,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
@@ -240,7 +242,7 @@ export default async function BookingsPage({
                           {canPay ? (
                             <PayBookingButton
                               bookingId={b.id}
-                              amount={`NZ$${(Number(b.lesson!.price) * b.participants).toFixed(2)}`}
+                              amount={formatCurrency(Number(b.lesson!.price) * b.participants, business?.currency)}
                             />
                           ) : null}
                           {canCheckIn ? (

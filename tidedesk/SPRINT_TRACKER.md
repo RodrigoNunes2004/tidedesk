@@ -1,6 +1,6 @@
 # TideDesk — Sprint Tracker
 
-**Last updated:** March 8, 2026
+**Last updated:** March 9, 2026
 
 ---
 
@@ -37,15 +37,15 @@
 - **Scope:** Enable/disable online booking, custom messages, business hours
 - **Deps:** DB fields on Business, settings UI
 
-### Option C — Public API & Performance (Sprint 1 follow-up)
+### Option C — Public API & Performance ✅ (Done)
 - **Goal:** Harden public booking for production load
-- **Scope:** Rate limiting, slots API optimization (caching, batch checks), optional email confirmation
-- **Doc:** SPRINT1_AUDIT.md § Recommendations for Sprint 2
+- **Scope:** Rate limiting (Upstash, optional), slots API caching (60s), idempotency, timezone clarity
+- **Delivered:** Middleware rate limit for /api/public/* (30 req/min per IP when Upstash configured); slots bookings cached 60s via unstable_cache; idempotency keys for booking creation (Upstash, 24h TTL); timezone note on booking form for multi-region clarity
 
-### Option D — Stripe Payments Polish
+### Option D — Stripe Payments Polish ✅ (Done)
 - **Goal:** Finish payment flow for rentals/bookings
 - **Scope:** Payment settings form, Connect flow, default payment method
-- **Note:** Stripe Connect already integrated; polish UX and edge cases
+- **Delivered:** Pay buttons show inline errors instead of alert; currency-aware amount formatting (NZD, USD, EUR, GBP, AUD); Payment Settings hint when Stripe not connected; canAcceptPayments now requires payoutsEnabled for public booking
 
 ---
 
@@ -54,11 +54,16 @@
 | Area            | Status       | Notes                                            |
 |-----------------|-------------|--------------------------------------------------|
 | Public booking  | Done + audit | Race fixes, validation, confirmation fixes       |
+| Rate limiting   | Done        | Upstash middleware 30/min (optional)             |
+| Slots cache     | Done        | 60s cache for bookings queries                   |
+| Idempotency     | Done        | Booking creation (Upstash, optional)            |
+| Timezone        | Done        | Clear note on booking form                       |
 | Weather engine  | Done        | Stormglass, WEATHER_ALERT, daily cron            |
 | SMS reminders   | Done        | 24h booking reminder via Twilio (if configured) |
 | Email reminders | Done        | Resend, confirmation, receipt, 24h reminder     |
 | Vercel deploy   | Done        | Crons: notifications 8am UTC, weather 6am UTC    |
 | Business form   | Done        | Sections, validation, lat/lng                   |
+| Stripe polish   | Done        | Inline errors, currency formatting, payment hints |
 
 ---
 
@@ -66,4 +71,5 @@
 
 1. ~~**Email notifications**~~ — Done (Resend)
 2. ~~**Online booking settings**~~ — Done (enable/disable, message, business hours)
-3. **Rate limiting + slots optimization** — production hardening
+3. ~~**Rate limiting + slots optimization**~~ — Done (Upstash middleware, slots cache 60s)
+4. ~~**Stripe payments polish**~~ — Done (inline errors, currency, hints, canAcceptPayments)

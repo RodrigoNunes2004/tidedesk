@@ -1,5 +1,6 @@
 import type { RentalStatus as PrismaRentalStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { formatCurrency } from "@/lib/currency";
 import { requireSession } from "@/lib/server/session";
 import { CreateRentalDialog } from "@/components/rentals/create-rental-dialog";
 import { PayRentalButton } from "@/components/rentals/pay-rental-button";
@@ -93,8 +94,8 @@ export default async function RentalsPage({
   const [business, customers, _equipment, categories, variants, rentals] = await Promise.all([
     prisma.business.findUnique({
       where: { id: businessId },
-      select: { stripeAccountId: true, chargesEnabled: true } as Record<string, boolean>,
-    }) as Promise<{ stripeAccountId: string | null; chargesEnabled: boolean } | null>,
+      select: { stripeAccountId: true, chargesEnabled: true, currency: true },
+    }),
     prisma.customer.findMany({
       where: customerWhere as never,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
@@ -299,7 +300,7 @@ export default async function RentalsPage({
                           {canPay ? (
                             <PayRentalButton
                               rentalId={r.id}
-                              amount={`$${(r.priceTotal ?? 0).toFixed(2)}`}
+                              amount={formatCurrency(r.priceTotal ?? 0, business?.currency)}
                             />
                           ) : null}
                           {canReturn ? <ReturnRentalButton rentalId={r.id} /> : null}

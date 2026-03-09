@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { unstable_cache } from "next/cache";
 import { fromZonedTime } from "date-fns-tz";
 import { prisma } from "@/lib/prisma";
 
@@ -6,6 +7,39 @@ const ACTIVE_BOOKING_STATUSES = ["BOOKED", "CHECKED_IN"] as ("BOOKED" | "CHECKED
 const DEFAULT_SLOT_START_HOUR = 7;
 const DEFAULT_SLOT_END_HOUR = 17;
 const SLOT_INTERVAL_MINUTES = 15;
+const SLOTS_CACHE_SECONDS = 60;
+
+async function fetchBookingsForDay(
+  businessId: string,
+  lessonId: string,
+  instructorIds: string[],
+  dayStart: Date,
+  dayEnd: Date
+) {
+  const [instructorBookings, lessonBookings] = await Promise.all([
+    prisma.booking.findMany({
+      where: {
+        businessId,
+        instructorId: { in: instructorIds },
+        status: { in: ACTIVE_BOOKING_STATUSES },
+        startAt: { lt: dayEnd },
+        endAt: { gt: dayStart },
+      },
+      select: { instructorId: true, startAt: true, endAt: true },
+    }),
+    prisma.booking.findMany({
+      where: {
+        businessId,
+        lessonId,
+        status: { in: ACTIVE_BOOKING_STATUSES },
+        startAt: { lt: dayEnd },
+        endAt: { gt: dayStart },
+      },
+      select: { startAt: true, endAt: true, participants: true },
+    }),
+  ]);
+  return { instructorBookings, lessonBookings };
+}
 
 /**
  * GET /api/public/schools/[slug]/slots?lessonId=&date=
@@ -84,28 +118,22 @@ export async function GET(
     return Response.json({ slots: [] });
   }
 
-  const [instructorBookings, lessonBookings] = await Promise.all([
-    prisma.booking.findMany({
-      where: {
-        businessId: business.id,
-        instructorId: { in: instructors.map((i) => i.id) },
-        status: { in: ACTIVE_BOOKING_STATUSES },
-        startAt: { lt: dayEnd },
-        endAt: { gt: dayStart },
-      },
-      select: { instructorId: true, startAt: true, endAt: true },
-    }),
-    prisma.booking.findMany({
-      where: {
-        businessId: business.id,
-        lessonId: lesson.id,
-        status: { in: ACTIVE_BOOKING_STATUSES },
-        startAt: { lt: dayEnd },
-        endAt: { gt: dayStart },
-      },
-      select: { startAt: true, endAt: true, participants: true },
-    }),
-  ]);
+  const instructorIds = instructors.map((i) => i.id);
+  const cachedFetchBookings = unstable_cache(
+    () =>
+      fetchBookingsForDay(
+        business.id,
+        lesson.id,
+        instructorIds,
+        dayStart,
+        dayEnd
+      ),
+    ["slots-bookings", business.id, lesson.id, dateStr],
+    { revalidate: SLOTS_CACHE_SECONDS }
+  );
+
+  const { instructorBookings, lessonBookings } =
+    await cachedFetchBookings();
 
   const capacity = lesson.capacity ?? 999;
 

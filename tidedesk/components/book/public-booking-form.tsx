@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -217,11 +217,21 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
     return false;
   }
 
+  const idempotencyKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    idempotencyKeyRef.current = null;
+  }, [slot]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!slot || !selectedLesson || !data) return;
     setError(null);
     setSubmitting(true);
+
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = crypto.randomUUID();
+    }
 
     try {
       const res = await fetch(`/api/public/schools/${businessSlug}/bookings`, {
@@ -240,6 +250,7 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
           boardVariantId,
           wetsuitVariantId,
           payLater,
+          idempotencyKey: idempotencyKeyRef.current,
         }),
       });
 
@@ -413,6 +424,9 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
               }}
               required
             />
+            <p className="text-xs text-muted-foreground">
+              Dates and times are in {data.business.timezone ?? "Pacific/Auckland"} (school&apos;s local time).
+            </p>
           </div>
           <div className="grid gap-2">
             <Label>Time</Label>
