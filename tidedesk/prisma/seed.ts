@@ -214,6 +214,19 @@ async function main() {
     },
   });
 
+  // Dev subscription (Pro plan) so tier-gated features like export work locally
+  await prisma.subscription.upsert({
+    where: { businessId },
+    update: { plan: "pro" },
+    create: {
+      businessId,
+      stripeCustomerId: "seed_customer",
+      stripeSubscriptionId: "seed_sub",
+      status: "active",
+      plan: "pro",
+    },
+  });
+
   console.log("Seed complete:", {
     business: { id: business.id, name: business.name },
     owner: { id: owner.id, email: owner.email, role: owner.role },

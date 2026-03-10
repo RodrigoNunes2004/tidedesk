@@ -3,6 +3,7 @@ import { randomBytes, scrypt as _scrypt } from "crypto";
 import { promisify } from "util";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { planFromPriceId } from "@/lib/tiers/stripe-plan";
 
 const scrypt = promisify(_scrypt);
 
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
   try {
     const stripe = getStripe();
     const stripeSession = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["subscription"],
+      expand: ["subscription", "subscription.default_payment_method"],
     });
 
     if (stripeSession.payment_status !== "unpaid" && stripeSession.payment_status !== "paid") {
@@ -136,13 +137,23 @@ export async function POST(req: NextRequest) {
       ? new Date(subscriptionData.trial_end * 1000)
       : null;
 
+    // Derive plan from Stripe subscription (checkout metadata or price ID)
+    const metadataPlan = (subscriptionData.metadata?.plan as string)?.toLowerCase();
+    let plan = "starter";
+    if (metadataPlan === "pro" || metadataPlan === "premium") {
+      plan = metadataPlan;
+    } else {
+      const priceId = subscriptionData.items?.data?.[0]?.price?.id;
+      if (priceId) plan = planFromPriceId(priceId);
+    }
+
     await prisma.subscription.create({
       data: {
         businessId: business.id,
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscriptionId,
         status: subscriptionData.status ?? "trialing",
-        plan: "starter",
+        plan,
         trialEndsAt: trialEnd,
       },
     });

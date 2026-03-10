@@ -6,6 +6,7 @@ import {
   ArchiveCustomerButton,
   UnarchiveCustomerButton,
 } from "@/components/customers/archive-customer-button";
+import { FeatureGate } from "@/lib/tiers/feature-gate";
 import { ExportButton } from "@/components/export/export-button";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,7 +124,9 @@ export default async function CustomersPage({
         </div>
         {!isInstructor && (
           <div className="flex shrink-0 items-center gap-2">
-            <ExportButton type="customers" />
+            <FeatureGate feature="export">
+              <ExportButton type="customers" />
+            </FeatureGate>
             <CreateCustomerDialog />
           </div>
         )}

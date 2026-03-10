@@ -1,8 +1,21 @@
 import { NextRequest } from "next/server";
 import Stripe from "stripe";
+import { getPriceIdForPlan } from "@/lib/tiers/stripe-plan";
+import { TIERS } from "@/lib/tiers";
 
-export async function POST(_req: NextRequest) {
-  const priceId = process.env.STRIPE_PRICE_ID;
+const VALID_PLANS = [TIERS.STARTER, TIERS.PRO, TIERS.PREMIUM];
+
+export async function POST(req: NextRequest) {
+  let plan = TIERS.STARTER;
+  try {
+    const body = await req.json().catch(() => ({}));
+    const requested = typeof body.plan === "string" ? body.plan.toLowerCase().trim() : "";
+    if (VALID_PLANS.includes(requested)) plan = requested;
+  } catch {
+    // use default
+  }
+
+  const priceId = getPriceIdForPlan(plan);
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   if (!process.env.STRIPE_SECRET_KEY || !priceId) {
@@ -26,9 +39,10 @@ export async function POST(_req: NextRequest) {
       ],
       subscription_data: {
         trial_period_days: 30,
+        metadata: { plan },
       },
       success_url: `${baseUrl}/onboarding?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: baseUrl,
+      cancel_url: `${baseUrl}/pricing`,
       allow_promotion_codes: true,
     });
 

@@ -30,8 +30,8 @@ export function BillingSection() {
       <CardHeader>
         <CardTitle>Billing</CardTitle>
         <CardDescription>
-          Manage your subscription, update payment method, cancel, or download
-          invoices.
+          Manage your subscription, upgrade or downgrade plans, update payment
+          method, cancel, or download invoices. All plans include a 30-day free trial.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -44,8 +44,8 @@ export function BillingSection() {
           {loading ? "Opening…" : "Manage subscription"}
         </Button>
         <p className="mt-2 text-sm text-muted-foreground">
-          You will be redirected to Stripe to manage your subscription, payment
-          method, and billing details.
+          You will be redirected to Stripe to manage your subscription. Choose
+          Starter, Pro, or Premium and switch plans anytime.
         </p>
       </CardContent>
     </Card>

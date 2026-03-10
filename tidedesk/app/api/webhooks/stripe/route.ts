@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { RentalStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { notificationService } from "@/services/notificationService";
+import { planFromPriceId } from "@/lib/tiers/stripe-plan";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -13,10 +14,11 @@ function getStripe() {
 
 /**
  * POST /api/webhooks/stripe
- * Handles Stripe webhook events for Connect accounts and payments.
+ * Handles Stripe webhook events for Connect accounts, payments, and subscriptions.
  * Configure in Stripe Dashboard: Developers → Webhooks → Add endpoint
  * Events: account.updated, payment_intent.succeeded, payment_intent.payment_failed,
- *         charge.refunded, checkout.session.completed
+ *         charge.refunded, checkout.session.completed,
+ *         customer.subscription.updated, customer.subscription.deleted
  */
 export async function POST(req: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -206,6 +208,36 @@ export async function POST(req: NextRequest) {
             });
           }
         }
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const sub = event.data.object as Stripe.Subscription;
+        const existing = await prisma.subscription.findFirst({
+          where: { stripeSubscriptionId: sub.id },
+        });
+        if (existing) {
+          const priceId = sub.items?.data?.[0]?.price?.id;
+          const plan = priceId ? planFromPriceId(priceId) : existing.plan;
+          const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
+          await prisma.subscription.update({
+            where: { id: existing.id },
+            data: {
+              status: sub.status ?? existing.status,
+              plan,
+              trialEndsAt: trialEnd ?? existing.trialEndsAt,
+            },
+          });
+        }
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        await prisma.subscription.updateMany({
+          where: { stripeSubscriptionId: sub.id },
+          data: { status: "canceled" },
+        });
         break;
       }
 

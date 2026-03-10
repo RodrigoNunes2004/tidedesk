@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/server/session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateLessonBookingDialog } from "@/components/bookings/create-lesson-booking-dialog";
+import { FeatureGate } from "@/lib/tiers/feature-gate";
 import { ExportButton } from "@/components/export/export-button";
 import { BookingsTableWithBulkActions } from "@/components/bookings/bookings-table-with-bulk-actions";
 import { LessonsTabContent } from "@/components/bookings/lessons-tab-content";
@@ -144,7 +145,11 @@ export default async function BookingsPage({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {!isInstructor && <ExportButton type="bookings" />}
+              {!isInstructor && (
+                <FeatureGate feature="export">
+                  <ExportButton type="bookings" />
+                </FeatureGate>
+              )}
               <CreateLessonBookingDialog
                 customers={customers}
                 lessons={lessonsForClient}

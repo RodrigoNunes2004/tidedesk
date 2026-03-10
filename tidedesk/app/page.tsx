@@ -1,5 +1,6 @@
 import {
   CalendarDays,
+  Check,
   CreditCard,
   LayoutDashboard,
   Package,
@@ -9,6 +10,7 @@ import {
 } from "lucide-react";
 import { StartTrialButton } from "@/components/landing/start-trial-button";
 import { LandingHeader } from "@/components/landing/landing-header";
+import { PLANS } from "@/lib/plans";
 
 const features = [
   {
@@ -99,36 +101,47 @@ export default function LandingPage() {
 
         <section className="py-12 sm:py-16 md:py-20">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12">Pricing</h2>
-            <div className="max-w-md mx-auto rounded-xl border bg-card p-6 sm:p-8 shadow-sm">
-              <h3 className="text-xl font-semibold">Starter Plan</h3>
-              <p className="mt-2 text-4xl font-bold">69 NZD</p>
-              <p className="text-muted-foreground">/ month</p>
-              <ul className="mt-6 space-y-2 text-left text-sm">
-                <li className="flex items-center gap-2">
-                  <Waves className="size-4 text-primary shrink-0" />
-                  30-day free trial
-                </li>
-                <li className="flex items-center gap-2">
-                  <Waves className="size-4 text-primary shrink-0" />
-                  Unlimited bookings
-                </li>
-                <li className="flex items-center gap-2">
-                  <Waves className="size-4 text-primary shrink-0" />
-                  Equipment tracking
-                </li>
-                <li className="flex items-center gap-2">
-                  <Waves className="size-4 text-primary shrink-0" />
-                  Instructor management
-                </li>
-                <li className="flex items-center gap-2">
-                  <Waves className="size-4 text-primary shrink-0" />
-                  Revenue dashboard
-                </li>
-              </ul>
-              <div className="mt-8">
-                <StartTrialButton className="w-full" />
-              </div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">Pricing</h2>
+            <p className="text-muted-foreground mb-8 sm:mb-12">
+              30-day free trial on all plans. Upgrade or downgrade anytime.
+            </p>
+            <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+              {PLANS.map((p) => (
+                <div
+                  key={p.plan}
+                  className={`relative rounded-xl border bg-card p-6 shadow-sm ${
+                    p.popular ? "border-primary ring-2 ring-primary/20" : ""
+                  }`}
+                >
+                  {p.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-medium text-primary-foreground">
+                      Popular
+                    </div>
+                  )}
+                  <h3 className="text-xl font-semibold">{p.name}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
+                  <p className="mt-4 text-3xl font-bold">
+                    {p.price}{" "}
+                    <span className="text-base font-normal text-muted-foreground">NZD</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">/ month</p>
+                  <ul className="mt-6 space-y-2 text-left text-sm">
+                    <li className="flex items-center gap-2">
+                      <Waves className="size-4 text-primary shrink-0" />
+                      30-day free trial
+                    </li>
+                    {p.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2">
+                        <Check className="size-4 text-primary shrink-0" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-8">
+                    <StartTrialButton plan={p.plan} className="w-full" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>

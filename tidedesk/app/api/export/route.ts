@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { resolveSession, rejectIfInstructor } from "../_lib/tenant";
+import { requireFeature } from "@/lib/tiers/require-feature";
 import { prisma } from "@/lib/prisma";
 import { PaymentStatus } from "@prisma/client";
 import { buildCSV } from "@/lib/csv";
@@ -12,6 +13,9 @@ export async function GET(req: NextRequest) {
   }
   const forbidden = rejectIfInstructor(role);
   if (forbidden) return forbidden;
+
+  const gated = await requireFeature(req, businessId, "export");
+  if (gated) return gated;
 
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type") ?? "customers";

@@ -3,6 +3,7 @@ import { PaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireStaffOrOwner } from "@/lib/server/role";
 import { RevenueChart } from "@/components/revenue/revenue-chart";
+import { FeatureGate } from "@/lib/tiers/feature-gate";
 import { ExportButton } from "@/components/export/export-button";
 
 type SearchParams = { range?: string };
@@ -230,7 +231,9 @@ export default async function RevenuePage({
             Revenue from paid payments. Never delete payments — audit trail stays intact.
           </div>
         </div>
-        <ExportButton type="revenue" />
+        <FeatureGate feature="export">
+          <ExportButton type="revenue" />
+        </FeatureGate>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

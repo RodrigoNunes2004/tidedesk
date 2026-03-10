@@ -10,6 +10,7 @@ import BookingConfirmationEmail from "@/emails/BookingConfirmationEmail";
 import LessonReminderEmail from "@/emails/LessonReminderEmail";
 import WeatherCancellationEmail from "@/emails/WeatherCancellationEmail";
 import PaymentReceiptEmail from "@/emails/PaymentReceiptEmail";
+import TrialEndingEmail from "@/emails/TrialEndingEmail";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -319,6 +320,56 @@ export const notificationService = {
       content: `Payment receipt ${amount} ${currency}`,
       status: result.success ? "SENT" : "FAILED",
       metadata: { paymentId },
+      error: result.error,
+    });
+
+    return result.success;
+  },
+
+  /**
+   * Send trial-ending reminder to business owner.
+   * Used by cron when trial ends within N days.
+   */
+  async sendTrialEndingReminder(params: {
+    businessId: string;
+    ownerEmail: string;
+    ownerName: string;
+    businessName: string;
+    trialEndDate: Date;
+  }): Promise<boolean> {
+    const { businessId, ownerEmail, ownerName, businessName, trialEndDate } = params;
+    if (!ownerEmail?.trim()) return false;
+
+    const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const pricingUrl = `${base}/settings?tab=billing`;
+
+    const html = await render(
+      TrialEndingEmail({
+        ownerName,
+        businessName,
+        trialEndDate: trialEndDate.toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        }),
+        pricingUrl,
+      })
+    );
+
+    const result = await sendEmail({
+      to: ownerEmail.trim(),
+      subject: `Your TideDesk trial ends soon – ${businessName}`,
+      html,
+    });
+
+    await logNotification({
+      businessId,
+      type: "TRIAL_ENDING",
+      recipient: ownerEmail,
+      content: `Trial ending reminder for ${businessName}`,
+      status: result.success ? "SENT" : "FAILED",
+      metadata: { trialEndDate: trialEndDate.toISOString() },
       error: result.error,
     });
 
