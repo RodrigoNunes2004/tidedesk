@@ -11,6 +11,7 @@ import LessonReminderEmail from "@/emails/LessonReminderEmail";
 import WeatherCancellationEmail from "@/emails/WeatherCancellationEmail";
 import PaymentReceiptEmail from "@/emails/PaymentReceiptEmail";
 import TrialEndingEmail from "@/emails/TrialEndingEmail";
+import InstructorInviteEmail from "@/emails/InstructorInviteEmail";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
@@ -370,6 +371,46 @@ export const notificationService = {
       content: `Trial ending reminder for ${businessName}`,
       status: result.success ? "SENT" : "FAILED",
       metadata: { trialEndDate: trialEndDate.toISOString() },
+      error: result.error,
+    });
+
+    return result.success;
+  },
+
+  /**
+   * Send instructor invite email with set-password link.
+   */
+  async sendInstructorInvite(params: {
+    businessId: string;
+    businessName: string;
+    email: string;
+    inviteUrl: string;
+    expiresInDays: number;
+  }): Promise<boolean> {
+    const { businessId, businessName, email, inviteUrl, expiresInDays } = params;
+    if (!email?.trim()) return false;
+
+    const html = await render(
+      InstructorInviteEmail({
+        businessName,
+        inviteUrl,
+        expiresInDays,
+      })
+    );
+
+    const result = await sendEmail({
+      to: email.trim(),
+      subject: `You're invited to join ${businessName} on TideDesk`,
+      html,
+    });
+
+    await logNotification({
+      businessId,
+      type: "INSTRUCTOR_INVITE",
+      recipient: email,
+      content: `Instructor invite for ${email}`,
+      status: result.success ? "SENT" : "FAILED",
+      metadata: { inviteUrl: inviteUrl.replace(/token=[^&]+/, "token=***") },
       error: result.error,
     });
 

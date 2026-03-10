@@ -41,6 +41,12 @@ export function InstructorsSection() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Invite instructor (login access)
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -165,8 +171,65 @@ export function InstructorsSection() {
     }
   }
 
+  async function sendInvite(e: React.FormEvent) {
+    e.preventDefault();
+    setInviteError(null);
+    setInviteSuccess(null);
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email) return;
+    setInviteLoading(true);
+    try {
+      const res = await fetch("/api/invites/instructors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = (await res.json().catch(() => null)) as { error?: string; ok?: boolean } | null;
+      if (!res.ok) {
+        setInviteError(data?.error ?? "Failed to send invite.");
+        return;
+      }
+      setInviteSuccess(`Invite sent to ${email}`);
+      setInviteEmail("");
+      router.refresh();
+    } finally {
+      setInviteLoading(false);
+    }
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="rounded-lg border bg-muted/50 p-4">
+        <h3 className="font-medium">Invite instructor (login access)</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Send an invite link so instructors can sign in and view their bookings. They&apos;ll set
+          their own password via the email link.
+        </p>
+        <form className="mt-3 flex flex-wrap items-end gap-2" onSubmit={sendInvite}>
+          <div className="flex-1 min-w-[200px]">
+            <Label htmlFor="invite-email" className="sr-only">Instructor email</Label>
+            <Input
+              id="invite-email"
+              type="email"
+              placeholder="instructor@example.com"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              required
+              className="h-9"
+            />
+          </div>
+          <Button type="submit" size="sm" disabled={inviteLoading}>
+            {inviteLoading ? "Sending…" : "Send invite"}
+          </Button>
+        </form>
+        {inviteError && (
+          <p className="mt-2 text-sm text-destructive">{inviteError}</p>
+        )}
+        {inviteSuccess && (
+          <p className="mt-2 text-sm text-green-600 dark:text-green-400">{inviteSuccess}</p>
+        )}
+      </div>
+
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Add instructors to assign to lesson bookings. Active instructors appear in the booking

@@ -36,9 +36,10 @@ model Business {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  users        User[]
-  customers    Customer[]
-  instructors  Instructor[]
+  users           User[]
+  customers       Customer[]
+  instructors     Instructor[]
+  instructorInvites InstructorInvite[]
   equipment    Equipment[]
   equipmentCategories  EquipmentCategory[]
   equipmentVariants    EquipmentVariant[]
@@ -416,6 +417,7 @@ enum NotificationType {
   WEATHER_ALERT
   PAYMENT_RECEIPT
   TRIAL_ENDING
+  INSTRUCTOR_INVITE
 }
 
 enum NotificationChannel {
@@ -427,4 +429,19 @@ enum NotificationStatus {
   PENDING
   SENT
   FAILED
+}
+
+model InstructorInvite {
+  id         String   @id @default(cuid())
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId String
+
+  email      String
+  token      String   @unique
+  expiresAt DateTime
+
+  createdAt  DateTime @default(now())
+
+  @@unique([businessId, email])
+  @@index([token])
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
@@ -12,10 +12,14 @@ import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const success = searchParams.get("invited") === "1"
+    ? "Account created. Sign in with your email and password."
+    : null;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,6 +89,9 @@ export default function LoginPage() {
             {error ? (
               <div className="text-sm text-destructive">{error}</div>
             ) : null}
+            {success ? (
+              <div className="text-sm text-green-600 dark:text-green-400">{success}</div>
+            ) : null}
 
             <Button type="submit" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
@@ -97,30 +104,32 @@ export default function LoginPage() {
                   Start free trial
                 </Link>
               </p>
-              <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                <span>Seed:</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail("owner@tidedesk.local");
-                    setPassword("ChangeMe123!");
-                  }}
-                  className="font-medium text-foreground hover:underline cursor-pointer text-left"
-                >
-                  Fill as owner
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail("instructor@tidedesk.local");
-                    setPassword("ChangeMe123!");
-                  }}
-                  className="font-medium text-foreground hover:underline cursor-pointer text-left"
-                >
-                  Fill as instructor
-                </button>
-                <span className="text-muted-foreground">(password: ChangeMe123!)</span>
-              </p>
+              {process.env.NODE_ENV !== "production" && (
+                <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                  <span>Seed:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail("owner@tidedesk.local");
+                      setPassword("ChangeMe123!");
+                    }}
+                    className="font-medium text-foreground hover:underline cursor-pointer text-left"
+                  >
+                    Fill as owner
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail("instructor@tidedesk.local");
+                      setPassword("ChangeMe123!");
+                    }}
+                    className="font-medium text-foreground hover:underline cursor-pointer text-left"
+                  >
+                    Fill as instructor
+                  </button>
+                  <span className="text-muted-foreground">(password: ChangeMe123!)</span>
+                </p>
+              )}
             </div>
           </form>
         </CardContent>
