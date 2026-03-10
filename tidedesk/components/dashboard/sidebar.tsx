@@ -1,5 +1,6 @@
 "use client";
 
+import type { UserRole } from "@prisma/client";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -13,22 +14,23 @@ import {
   Receipt,
   Settings,
   ShoppingBag,
+  User,
   Users,
   UserCircle,
   Waves,
 } from "lucide-react";
 
-const nav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/rentals", label: "Rentals", icon: ShoppingBag },
-  { href: "/bookings", label: "Bookings", icon: CalendarDays },
-  { href: "/equipment", label: "Equipment", icon: Waves },
-  { href: "/instructors", label: "Instructors", icon: UserCircle },
-  { href: "/revenue", label: "Revenue", icon: Receipt },
-] as const;
+const fullNav: { href: string; label: string; icon: typeof LayoutDashboard; roles: UserRole[] }[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["OWNER", "STAFF", "INSTRUCTOR"] },
+  { href: "/customers", label: "Customers", icon: Users, roles: ["OWNER", "STAFF", "INSTRUCTOR"] },
+  { href: "/rentals", label: "Rentals", icon: ShoppingBag, roles: ["OWNER", "STAFF"] },
+  { href: "/bookings", label: "Bookings", icon: CalendarDays, roles: ["OWNER", "STAFF", "INSTRUCTOR"] },
+  { href: "/equipment", label: "Equipment", icon: Waves, roles: ["OWNER", "STAFF"] },
+  { href: "/instructors", label: "Instructors", icon: UserCircle, roles: ["OWNER", "STAFF"] },
+  { href: "/revenue", label: "Revenue", icon: Receipt, roles: ["OWNER", "STAFF"] },
+];
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ role }: { role: UserRole }) {
   const pathname = usePathname();
   const ctx = useDashboardContext();
 
@@ -51,7 +53,7 @@ export function DashboardSidebar() {
       </div>
       <Separator />
       <nav className="flex flex-1 flex-col gap-1 p-2">
-        {nav.map((item) => {
+        {fullNav.filter((item) => item.roles.includes(role)).map((item) => {
           const active =
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname?.startsWith(item.href));
@@ -76,20 +78,35 @@ export function DashboardSidebar() {
         })}
       </nav>
       <Separator />
-      <div className="p-2">
+      <div className="p-2 space-y-1">
         <Link
-          href="/settings"
+          href="/account"
           onClick={() => ctx?.closeSidebar()}
           className={cn(
             "flex min-h-11 items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors",
-            pathname?.startsWith("/settings")
+            pathname?.startsWith("/account")
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
               : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
           )}
         >
-          <Settings className="size-4 shrink-0" />
-          Settings
+          <User className="size-4 shrink-0" />
+          Account
         </Link>
+        {role !== "INSTRUCTOR" && (
+          <Link
+            href="/settings"
+            onClick={() => ctx?.closeSidebar()}
+            className={cn(
+              "flex min-h-11 items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors",
+              pathname?.startsWith("/settings")
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+            )}
+          >
+            <Settings className="size-4 shrink-0" />
+            Settings
+          </Link>
+        )}
       </div>
     </aside>
   );

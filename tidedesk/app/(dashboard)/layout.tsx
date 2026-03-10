@@ -7,10 +7,12 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireSession();
+  const session = await requireSession();
 
   return (
-    <DashboardShell sidebar={<DashboardSidebar />}>{children}</DashboardShell>
+    <DashboardShell sidebar={<DashboardSidebar role={session.user.role} />}>
+      {children}
+    </DashboardShell>
   );
 }
 

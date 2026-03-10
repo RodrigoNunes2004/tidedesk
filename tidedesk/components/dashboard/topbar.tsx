@@ -73,7 +73,7 @@ export function DashboardTopbar({ onOpenNav }: { onOpenNav: () => void }) {
           <DropdownMenuLabel>Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href="/settings" className="flex cursor-pointer items-center gap-2">
+            <Link href="/account" className="flex cursor-pointer items-center gap-2">
               <User className="size-4" />
               Upload profile photo
             </Link>

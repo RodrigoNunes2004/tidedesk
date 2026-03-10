@@ -97,9 +97,29 @@ export default function LoginPage() {
                   Start free trial
                 </Link>
               </p>
-              <p>
-                Seed: <span className="font-medium">owner@tidedesk.local</span> /{" "}
-                <span className="font-medium">ChangeMe123!</span>
+              <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                <span>Seed:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("owner@tidedesk.local");
+                    setPassword("ChangeMe123!");
+                  }}
+                  className="font-medium text-foreground hover:underline cursor-pointer text-left"
+                >
+                  Fill as owner
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("instructor@tidedesk.local");
+                    setPassword("ChangeMe123!");
+                  }}
+                  className="font-medium text-foreground hover:underline cursor-pointer text-left"
+                >
+                  Fill as instructor
+                </button>
+                <span className="text-muted-foreground">(password: ChangeMe123!)</span>
               </p>
             </div>
           </form>

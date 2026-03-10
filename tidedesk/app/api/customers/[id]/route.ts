@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resolveBusinessId } from "../../_lib/tenant";
+import { resolveBusinessId, resolveSession, rejectIfInstructor } from "../../_lib/tenant";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -27,13 +27,15 @@ export async function GET(req: NextRequest, { params }: Params) {
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const businessId = await resolveBusinessId(req);
+  const { businessId, role } = await resolveSession(req);
   if (!businessId) {
     return NextResponse.json(
       { error: "Missing tenant. Provide x-business-id header." },
       { status: 400 },
     );
   }
+  const forbidden = rejectIfInstructor(role);
+  if (forbidden) return forbidden;
 
   let body: unknown;
   try {
@@ -89,13 +91,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 export async function DELETE(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const businessId = await resolveBusinessId(req);
+  const { businessId, role } = await resolveSession(req);
   if (!businessId) {
     return NextResponse.json(
       { error: "Missing tenant. Provide x-business-id header." },
       { status: 400 },
     );
   }
+  const forbidden = rejectIfInstructor(role);
+  if (forbidden) return forbidden;
 
   const exists = await prisma.customer.findFirst({ where: { id, businessId } });
   if (!exists) {

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/server/session";
+import { requireStaffOrOwner } from "@/lib/server/role";
 import { CreateCategoryDialog } from "@/components/equipment/create-category-dialog";
 import { CreateVariantDialog } from "@/components/equipment/create-variant-dialog";
 import { DeleteCategoryButton } from "@/components/equipment/delete-category-button";
@@ -78,7 +78,7 @@ export default async function EquipmentPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const session = await requireSession();
+  const session = await requireStaffOrOwner();
   const businessId = session.user.businessId;
 
   const sp = await searchParams;

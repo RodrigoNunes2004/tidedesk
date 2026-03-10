@@ -6,6 +6,7 @@ import { requireSession } from "@/lib/server/session";
 export default async function DashboardPage() {
   const session = await requireSession();
   const businessId = session.user.businessId;
+  const isInstructor = session.user.role === "INSTRUCTOR";
 
   // Defensive: if generated enums are stale, filter out undefined.
   const activeBookingStatuses = [BookingStatus.BOOKED, BookingStatus.CHECKED_IN].filter(
@@ -63,16 +64,18 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="text-3xl font-semibold">{customers}</CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm text-muted-foreground">
-            Active rentals
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-3xl font-semibold">
-          {activeRentals}
-        </CardContent>
-      </Card>
+      {!isInstructor && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm text-muted-foreground">
+              Active rentals
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-3xl font-semibold">
+            {activeRentals}
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm text-muted-foreground">
@@ -83,16 +86,18 @@ export default async function DashboardPage() {
           {todaysBookings}
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm text-muted-foreground">
-            Today&apos;s revenue
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-3xl font-semibold">
-          {todaysRevenue}
-        </CardContent>
-      </Card>
+      {!isInstructor && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm text-muted-foreground">
+              Today&apos;s revenue
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-3xl font-semibold">
+            {todaysRevenue}
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm text-muted-foreground">

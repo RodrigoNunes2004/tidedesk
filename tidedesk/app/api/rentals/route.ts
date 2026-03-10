@@ -2,19 +2,21 @@ import { NextResponse, type NextRequest } from "next/server";
 import { EquipmentStatus, PaymentMethod, RentalStatus } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { resolveBusinessId } from "../_lib/tenant";
+import { resolveSession, rejectIfInstructor } from "../_lib/tenant";
 
 const RENTAL_STATUSES = Object.values(RentalStatus);
 const PAYMENT_METHODS = Object.values(PaymentMethod);
 
 export async function GET(req: NextRequest) {
-  const businessId = await resolveBusinessId(req);
+  const { businessId, role } = await resolveSession(req);
   if (!businessId) {
     return NextResponse.json(
       { error: "Missing tenant. Provide x-business-id header." },
       { status: 400 },
     );
   }
+  const forbidden = rejectIfInstructor(role);
+  if (forbidden) return forbidden;
 
   const { searchParams } = new URL(req.url);
   const takeRaw = searchParams.get("take");
@@ -53,13 +55,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const businessId = await resolveBusinessId(req);
+  const { businessId, role } = await resolveSession(req);
   if (!businessId) {
     return NextResponse.json(
       { error: "Missing tenant. Provide x-business-id header." },
       { status: 400 },
     );
   }
+  const forbidden = rejectIfInstructor(role);
+  if (forbidden) return forbidden;
 
   let body: unknown;
   try {

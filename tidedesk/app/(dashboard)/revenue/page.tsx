@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/server/session";
+import { requireStaffOrOwner } from "@/lib/server/role";
 import { RevenueChart } from "@/components/revenue/revenue-chart";
+import { ExportButton } from "@/components/export/export-button";
 
 type SearchParams = { range?: string };
 
@@ -24,7 +25,7 @@ export default async function RevenuePage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const session = await requireSession();
+  const session = await requireStaffOrOwner();
   const businessId = session.user.businessId;
 
   const sp = await searchParams;
@@ -222,11 +223,14 @@ export default async function RevenuePage({
 
   return (
     <div className="grid gap-4">
-      <div>
-        <div className="text-xl font-semibold tracking-tight">Revenue</div>
-        <div className="text-sm text-muted-foreground">
-          Revenue from paid payments. Never delete payments — audit trail stays intact.
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-xl font-semibold tracking-tight">Revenue</div>
+          <div className="text-sm text-muted-foreground">
+            Revenue from paid payments. Never delete payments — audit trail stays intact.
+          </div>
         </div>
+        <ExportButton type="revenue" />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

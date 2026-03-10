@@ -1,8 +1,8 @@
-import { requireSession } from "@/lib/server/session";
+import { requireStaffOrOwner } from "@/lib/server/role";
 import { InstructorsPageContent } from "@/components/instructors/instructors-page-content";
 
 export default async function InstructorsPage() {
-  await requireSession();
+  await requireStaffOrOwner();
 
   return (
     <div className="space-y-6">

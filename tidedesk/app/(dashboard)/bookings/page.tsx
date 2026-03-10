@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/server/session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateLessonBookingDialog } from "@/components/bookings/create-lesson-booking-dialog";
+import { ExportButton } from "@/components/export/export-button";
 import { BookingsTableWithBulkActions } from "@/components/bookings/bookings-table-with-bulk-actions";
 import { LessonsTabContent } from "@/components/bookings/lessons-tab-content";
 
@@ -20,6 +21,7 @@ export default async function BookingsPage({
 }) {
   const session = await requireSession();
   const businessId = session.user.businessId;
+  const isInstructor = session.user.role === "INSTRUCTOR";
 
   const sp = await searchParams;
   const statusRaw = (sp.status ?? "booked").toLowerCase();
@@ -100,30 +102,32 @@ export default async function BookingsPage({
 
   return (
     <div className="min-w-0 grid gap-4">
-      <div className="flex min-w-0 gap-1 overflow-x-auto border-b -mx-3 px-3 sm:mx-0 sm:px-0">
-        <Link
-          href="/bookings"
-          className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-colors min-h-11 flex items-center ${
-            !showLessons
-              ? "border-b-2 border-primary text-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Bookings
-        </Link>
-        <Link
-          href="/bookings?tab=lessons"
-          className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-colors min-h-11 flex items-center ${
-            showLessons
-              ? "border-b-2 border-primary text-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Lessons
-        </Link>
-      </div>
+      {!isInstructor && (
+        <div className="flex min-w-0 gap-1 overflow-x-auto border-b -mx-3 px-3 sm:mx-0 sm:px-0">
+          <Link
+            href="/bookings"
+            className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-colors min-h-11 flex items-center ${
+              !showLessons
+                ? "border-b-2 border-primary text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Bookings
+          </Link>
+          <Link
+            href="/bookings?tab=lessons"
+            className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-colors min-h-11 flex items-center ${
+              showLessons
+                ? "border-b-2 border-primary text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Lessons
+          </Link>
+        </div>
+      )}
 
-      {showLessons ? (
+      {showLessons && !isInstructor ? (
         <LessonsTabContent lessons={lessonsForClient} />
       ) : (
         <>
@@ -139,14 +143,17 @@ export default async function BookingsPage({
                 Lesson bookings share the same engine as rentals (time windows + status).
               </div>
             </div>
-            <CreateLessonBookingDialog
-              customers={customers}
-              lessons={lessonsForClient}
+            <div className="flex items-center gap-2">
+              {!isInstructor && <ExportButton type="bookings" />}
+              <CreateLessonBookingDialog
+                customers={customers}
+                lessons={lessonsForClient}
               instructors={instructors}
               categories={categories}
               variants={variants}
               businessTimezone={business?.timezone}
-            />
+              />
+            </div>
           </div>
 
           <Card>

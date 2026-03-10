@@ -1,4 +1,4 @@
-import { requireSession } from "@/lib/server/session";
+import { requireStaffOrOwner } from "@/lib/server/role";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AccountSection } from "@/components/settings/account-section";
@@ -25,7 +25,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
     params.tab === "account"
       ? params.tab
       : "account";
-  const session = await requireSession();
+  const session = await requireStaffOrOwner();
   const businessId = session.user.businessId;
 
   const [business, currentUser] = await Promise.all([

@@ -6,6 +6,7 @@ import {
   ArchiveCustomerButton,
   UnarchiveCustomerButton,
 } from "@/components/customers/archive-customer-button";
+import { ExportButton } from "@/components/export/export-button";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,7 @@ export default async function CustomersPage({
 }) {
   const session = await requireSession();
   const businessId = session.user.businessId;
+  const isInstructor = session.user.role === "INSTRUCTOR";
 
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
@@ -114,12 +116,17 @@ export default async function CustomersPage({
         <div>
           <div className="text-xl font-semibold tracking-tight">Customers</div>
           <div className="text-sm text-muted-foreground">
-            Create and manage surf school customers.
+            {isInstructor
+              ? "View customer list (read-only)."
+              : "Create and manage surf school customers."}
           </div>
         </div>
-        <div className="shrink-0">
-          <CreateCustomerDialog />
-        </div>
+        {!isInstructor && (
+          <div className="flex shrink-0 items-center gap-2">
+            <ExportButton type="customers" />
+            <CreateCustomerDialog />
+          </div>
+        )}
       </div>
 
       <Card>
@@ -190,7 +197,7 @@ export default async function CustomersPage({
                   <TableHead>Phone</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead className="text-right">Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  {!isInstructor && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -211,29 +218,31 @@ export default async function CustomersPage({
                     <TableCell className="text-right text-muted-foreground">
                       {new Date(c.createdAt).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex flex-wrap justify-end gap-1">
-                        <EditCustomerDialog
-                          customer={{
-                            id: c.id,
-                            firstName: c.firstName,
-                            lastName: c.lastName,
-                            phone: c.phone,
-                            email: c.email,
-                          }}
-                        />
-                        {status === "archived" ? (
-                          <UnarchiveCustomerButton customerId={c.id} />
-                        ) : (
-                          <ArchiveCustomerButton customerId={c.id} />
-                        )}
-                      </div>
-                    </TableCell>
+                    {!isInstructor && (
+                      <TableCell className="text-right">
+                        <div className="flex flex-wrap justify-end gap-1">
+                          <EditCustomerDialog
+                            customer={{
+                              id: c.id,
+                              firstName: c.firstName,
+                              lastName: c.lastName,
+                              phone: c.phone,
+                              email: c.email,
+                            }}
+                          />
+                          {status === "archived" ? (
+                            <UnarchiveCustomerButton customerId={c.id} />
+                          ) : (
+                            <ArchiveCustomerButton customerId={c.id} />
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
                 {customers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center">
+                    <TableCell colSpan={isInstructor ? 4 : 5} className="py-8 text-center">
                       No customers yet.
                     </TableCell>
                   </TableRow>

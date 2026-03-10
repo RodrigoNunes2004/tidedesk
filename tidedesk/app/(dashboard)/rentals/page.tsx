@@ -1,7 +1,7 @@
 import type { RentalStatus as PrismaRentalStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/currency";
-import { requireSession } from "@/lib/server/session";
+import { requireStaffOrOwner } from "@/lib/server/role";
 import { CreateRentalDialog } from "@/components/rentals/create-rental-dialog";
 import { PayRentalButton } from "@/components/rentals/pay-rental-button";
 import { CancelRentalButton, ReturnRentalButton } from "@/components/rentals/rental-actions";
@@ -73,7 +73,7 @@ export default async function RentalsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const session = await requireSession();
+  const session = await requireStaffOrOwner();
   const businessId = session.user.businessId;
   const prismaHack = prisma as unknown as PrismaHack;
 

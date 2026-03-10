@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { RentalStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { resolveBusinessId } from "../_lib/tenant";
+import { resolveBusinessId, resolveSession, rejectIfInstructor } from "../_lib/tenant";
 
 type VariantDelegate = {
   findMany: (args?: object) => Promise<unknown[]>;
@@ -79,13 +79,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const businessId = await resolveBusinessId(req);
+  const { businessId, role } = await resolveSession(req);
   if (!businessId) {
     return NextResponse.json(
       { error: "Missing tenant. Provide x-business-id header." },
       { status: 400 },
     );
   }
+  const forbidden = rejectIfInstructor(role);
+  if (forbidden) return forbidden;
 
   let body: unknown;
   try {

@@ -14,6 +14,7 @@ async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
   // format: scrypt$$<saltHex>$<derivedKeyHex>
+  // Auth expects scrypt$$<salt>$<hex> (4 parts)
   return `scrypt$$${salt}$${derivedKey.toString("hex")}`;
 }
 
@@ -64,6 +65,29 @@ async function main() {
       email: ownerEmail,
       passwordHash,
       role: UserRole.OWNER,
+      businessId: business.id,
+    },
+  });
+
+  const instructorEmail = (process.env.SEED_INSTRUCTOR_EMAIL ?? "instructor@tidedesk.local")
+    .trim()
+    .toLowerCase();
+  const instructorPassword =
+    process.env.SEED_INSTRUCTOR_PASSWORD ?? ownerPassword;
+  const instructorUserHash = await hashPassword(instructorPassword);
+  await prisma.user.upsert({
+    where: { email: instructorEmail },
+    update: {
+      name: "Jake Wilson",
+      passwordHash: instructorUserHash,
+      role: UserRole.INSTRUCTOR,
+      businessId: business.id,
+    },
+    create: {
+      name: "Jake Wilson",
+      email: instructorEmail,
+      passwordHash: instructorUserHash,
+      role: UserRole.INSTRUCTOR,
       businessId: business.id,
     },
   });
@@ -193,6 +217,7 @@ async function main() {
   console.log("Seed complete:", {
     business: { id: business.id, name: business.name },
     owner: { id: owner.id, email: owner.email, role: owner.role },
+    instructor: { email: instructorEmail, role: "INSTRUCTOR", password: instructorPassword },
   });
 
   await prisma.$disconnect();
