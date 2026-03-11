@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/server/session";
+import { requireFeature } from "@/lib/tiers/require-feature";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -30,20 +31,33 @@ export async function POST(req: NextRequest) {
 
   const b = body as Record<string, unknown>;
   const bookingId = typeof b?.bookingId === "string" ? String(b.bookingId).trim() : "";
+  const paymentType = (typeof b?.paymentType === "string" ? b.paymentType : "full") as "deposit" | "full" | "balance";
 
   if (!bookingId) {
     return Response.json({ error: "bookingId is required" }, { status: 400 });
+  }
+
+  if (paymentType === "deposit" || paymentType === "balance") {
+    const gated = await requireFeature(req, businessId, "deposits");
+    if (gated) return gated;
   }
 
   try {
     const booking = await prisma.booking.findFirst({
       where: { id: bookingId, businessId },
       include: {
-        lesson: { select: { id: true, title: true, price: true } },
+        lesson: {
+          select: { id: true, title: true, price: true, depositAmount: true } as {
+            id: boolean;
+            title: boolean;
+            price: boolean;
+            depositAmount: boolean;
+          },
+        },
         customer: { select: { firstName: true, lastName: true } },
         payments: {
           where: { provider: "STRIPE", status: "PAID" },
-          select: { id: true },
+          select: { id: true, amount: true },
         },
       },
     });
@@ -52,12 +66,41 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    if (booking.payments.length > 0) {
+    if (!booking.lesson) {
+      return Response.json({ error: "Booking has no lesson" }, { status: 400 });
+    }
+
+    const totalAmount = Number(booking.lesson.price) * booking.participants;
+    const depositPaid = Number((booking as { depositPaid?: unknown }).depositPaid ?? 0);
+    const balanceRemaining = totalAmount - depositPaid;
+    const isFullyPaid = depositPaid >= totalAmount - 0.01;
+
+    if (isFullyPaid) {
       return Response.json({ error: "Booking already paid" }, { status: 400 });
     }
 
-    if (!booking.lesson) {
-      return Response.json({ error: "Booking has no lesson" }, { status: 400 });
+    let amountCents: number;
+    let lineItemName: string;
+
+    if (paymentType === "deposit") {
+      const depAmount = Number((booking.lesson as { depositAmount?: unknown }).depositAmount ?? 0);
+      if (depAmount <= 0) {
+        return Response.json({ error: "This lesson has no deposit option" }, { status: 400 });
+      }
+      if (depositPaid > 0) {
+        return Response.json({ error: "Deposit already paid. Pay the remaining balance." }, { status: 400 });
+      }
+      amountCents = Math.round(depAmount * booking.participants * 100);
+      lineItemName = `Deposit: ${booking.lesson.title} × ${booking.participants}`;
+    } else if (paymentType === "balance") {
+      if (balanceRemaining <= 0) {
+        return Response.json({ error: "No balance remaining" }, { status: 400 });
+      }
+      amountCents = Math.round(balanceRemaining * 100);
+      lineItemName = `Balance: ${booking.lesson.title} × ${booking.participants}`;
+    } else {
+      amountCents = Math.round(totalAmount * 100);
+      lineItemName = `${booking.lesson.title} × ${booking.participants}`;
     }
 
     const business = (await prisma.business.findUnique({
@@ -72,8 +115,6 @@ export async function POST(req: NextRequest) {
     }
 
     const stripeAccountId = business.stripeAccountId;
-    const lessonPrice = Number(booking.lesson.price);
-    const amountCents = Math.round(lessonPrice * booking.participants * 100);
     if (amountCents < 50) {
       return Response.json({ error: "Amount must be at least 0.50" }, { status: 400 });
     }
@@ -92,7 +133,7 @@ export async function POST(req: NextRequest) {
               currency,
               unit_amount: amountCents,
               product_data: {
-                name: `${booking.lesson.title} × ${booking.participants}`,
+                name: lineItemName,
                 description: `${booking.customer.firstName} ${booking.customer.lastName} • ${new Date(booking.startAt).toLocaleDateString()}`,
               },
             },
@@ -104,6 +145,7 @@ export async function POST(req: NextRequest) {
         metadata: {
           bookingId,
           businessId,
+          paymentType,
         },
       },
       { stripeAccount: stripeAccountId },

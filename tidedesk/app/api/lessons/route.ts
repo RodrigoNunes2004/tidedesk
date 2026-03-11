@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolveBusinessId, resolveSession, rejectIfInstructor } from "../_lib/tenant";
+import { requireFeature } from "@/lib/tiers/require-feature";
 
 export async function GET(req: NextRequest) {
   const businessId = await resolveBusinessId(req);
@@ -76,6 +77,14 @@ export async function POST(req: NextRequest) {
       ? b.instructorId.trim()
       : null;
 
+  const depositAmountRaw = b.depositAmount;
+  const depositAmount =
+    depositAmountRaw === null || depositAmountRaw === undefined
+      ? null
+      : typeof depositAmountRaw === "string" || typeof depositAmountRaw === "number"
+        ? new Prisma.Decimal(depositAmountRaw)
+        : null;
+
   const durationRaw = b.durationMinutes;
   const durationMinutes =
     typeof durationRaw === "number" && Number.isFinite(durationRaw)
@@ -116,6 +125,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (depositAmount !== null && Number(depositAmount) > 0) {
+    const gated = await requireFeature(req, businessId, "deposits");
+    if (gated) return gated;
+  }
+  if (depositAmount !== null && (Number(depositAmount) < 0 || Number(depositAmount) > Number(price))) {
+    return NextResponse.json(
+      { error: "depositAmount must be between 0 and the lesson price." },
+      { status: 400 },
+    );
+  }
+
   const lesson = await prisma.lesson.create({
     data: {
       businessId,
@@ -124,7 +144,8 @@ export async function POST(req: NextRequest) {
       capacity,
       durationMinutes,
       instructorId,
-    },
+      ...(depositAmount !== null && { depositAmount }),
+    } as Parameters<typeof prisma.lesson.create>[0]["data"],
   });
 
   return NextResponse.json({ data: lesson }, { status: 201 });

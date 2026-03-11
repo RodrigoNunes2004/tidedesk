@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolveBusinessId, resolveSession, rejectIfInstructor } from "../../_lib/tenant";
+import { requireFeature } from "@/lib/tiers/require-feature";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -81,6 +82,23 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     data.durationMinutes = n;
   }
 
+  if (typeof b.depositAmount === "string" || typeof b.depositAmount === "number") {
+    const dep = new Prisma.Decimal(b.depositAmount);
+    if (Number(dep) < 0) {
+      return NextResponse.json(
+        { error: "depositAmount must be non-negative." },
+        { status: 400 },
+      );
+    }
+    data.depositAmount = dep;
+  }
+  if (b.depositAmount === null) data.depositAmount = null;
+
+  if (data.depositAmount !== undefined && Number(data.depositAmount) > 0) {
+    const gated = await requireFeature(req, businessId, "deposits");
+    if (gated) return gated;
+  }
+
   if (typeof b.instructorId === "string") {
     const v = b.instructorId.trim();
     if (!v) {
@@ -110,6 +128,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const exists = await prisma.lesson.findFirst({ where: { id, businessId } });
   if (!exists) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
+
+  const finalPrice = (data.price as Prisma.Decimal) ?? exists.price;
+  const existsDeposit = (exists as typeof exists & { depositAmount?: unknown }).depositAmount;
+  const finalDeposit = (data.depositAmount as Prisma.Decimal | null) ?? existsDeposit;
+  if (finalDeposit !== null && Number(finalDeposit) > Number(finalPrice)) {
+    return NextResponse.json(
+      { error: "depositAmount cannot exceed the lesson price." },
+      { status: 400 },
+    );
   }
 
   const updated = await prisma.lesson.update({

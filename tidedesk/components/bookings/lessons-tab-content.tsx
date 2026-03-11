@@ -19,6 +19,7 @@ export type LessonRow = {
   durationMinutes: number;
   capacity: number | null;
   price: unknown;
+  depositAmount?: unknown;
 };
 
 export function LessonsTabContent({ lessons }: { lessons: LessonRow[] }) {
@@ -78,6 +79,7 @@ export function LessonsTabContent({ lessons }: { lessons: LessonRow[] }) {
                             id: l.id,
                             title: l.title,
                             price: Number(l.price),
+                            depositAmount: l.depositAmount != null ? Number(l.depositAmount) : null,
                             capacity: l.capacity,
                             durationMinutes: l.durationMinutes,
                           }}

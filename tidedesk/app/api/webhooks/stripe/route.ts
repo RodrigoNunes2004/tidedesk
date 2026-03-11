@@ -5,6 +5,7 @@ import { RentalStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { notificationService } from "@/services/notificationService";
 import { planFromPriceId } from "@/lib/tiers/stripe-plan";
+import { dispatchWebhook, buildPaymentPayload } from "@/lib/webhooks/dispatch";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -92,10 +93,11 @@ export async function POST(req: NextRequest) {
             where: { stripePaymentIntentId: paymentIntent.id },
           });
           if (!existing) {
+            const amountPaid = (paymentIntent.amount ?? 0) / 100;
             const payment = await prisma.payment.create({
               data: {
                 businessId: resolvedBusinessId,
-                amount: (paymentIntent.amount ?? 0) / 100,
+                amount: amountPaid,
                 currency: paymentIntent.currency?.toUpperCase() ?? "NZD",
                 method: "CARD",
                 provider: "STRIPE",
@@ -111,10 +113,34 @@ export async function POST(req: NextRequest) {
                 data: { status: RentalStatus.ACTIVE },
               });
             }
+            if (bookingId) {
+              const booking = await prisma.booking.findUnique({
+                where: { id: bookingId },
+                include: { lesson: { select: { price: true } } },
+              });
+              if (booking) {
+                const totalAmount = Number(booking.lesson?.price ?? 0) * booking.participants;
+                const newDepositPaid = Number((booking as { depositPaid?: unknown }).depositPaid ?? 0) + amountPaid;
+                const newBalanceRemaining = Math.max(0, totalAmount - newDepositPaid);
+                await prisma.booking.update({
+                  where: { id: bookingId },
+                  data: {
+                    depositPaid: newDepositPaid,
+                    balanceRemaining: newBalanceRemaining > 0.01 ? newBalanceRemaining : null,
+                  } as Parameters<typeof prisma.booking.update>[0]["data"],
+                });
+              }
+            }
             try {
               await notificationService.sendPaymentReceipt(payment.id);
             } catch (e) {
               console.error("Payment receipt email failed:", e);
+            }
+            const paymentPayload = await buildPaymentPayload(payment.id);
+            if (paymentPayload) {
+              dispatchWebhook(resolvedBusinessId, "payment.succeeded", paymentPayload).catch((e) =>
+                console.error("Webhook dispatch failed:", e)
+              );
             }
           }
         }
@@ -176,10 +202,11 @@ export async function POST(req: NextRequest) {
             where: { stripePaymentIntentId: pi },
           });
           if (!existing) {
+            const amountPaid = (session.amount_total ?? 0) / 100;
             const payment = await prisma.payment.create({
               data: {
                 businessId: resolvedBusinessId,
-                amount: (session.amount_total ?? 0) / 100,
+                amount: amountPaid,
                 currency: (session.currency ?? "nzd").toUpperCase(),
                 method: "ONLINE",
                 provider: "STRIPE",
@@ -196,10 +223,34 @@ export async function POST(req: NextRequest) {
                 data: { status: RentalStatus.ACTIVE },
               });
             }
+            if (bookingId) {
+              const booking = await prisma.booking.findUnique({
+                where: { id: bookingId },
+                include: { lesson: { select: { price: true } } },
+              });
+              if (booking) {
+                const totalAmount = Number(booking.lesson?.price ?? 0) * booking.participants;
+                const newDepositPaid = Number((booking as { depositPaid?: unknown }).depositPaid ?? 0) + amountPaid;
+                const newBalanceRemaining = Math.max(0, totalAmount - newDepositPaid);
+                await prisma.booking.update({
+                  where: { id: bookingId },
+                  data: {
+                    depositPaid: newDepositPaid,
+                    balanceRemaining: newBalanceRemaining > 0.01 ? newBalanceRemaining : null,
+                  } as Parameters<typeof prisma.booking.update>[0]["data"],
+                });
+              }
+            }
             try {
               await notificationService.sendPaymentReceipt(payment.id);
             } catch (e) {
               console.error("Payment receipt email failed:", e);
+            }
+            const paymentPayload = await buildPaymentPayload(payment.id);
+            if (paymentPayload) {
+              dispatchWebhook(resolvedBusinessId, "payment.succeeded", paymentPayload).catch((e) =>
+                console.error("Webhook dispatch failed:", e)
+              );
             }
           }
           if (bookingId) {

@@ -6,6 +6,7 @@ import { sendNotification } from "@/modules/notifications/notificationService";
 import { notificationService } from "@/services/notificationService";
 import { getIdempotencyResult, setIdempotencyResult } from "@/lib/idempotency";
 import { validateLessonEndTime } from "@/lib/lesson-hours";
+import { dispatchWebhook, buildBookingPayload } from "@/lib/webhooks/dispatch";
 
 const ACTIVE_BOOKING_STATUSES = ["BOOKED", "CHECKED_IN"] as ("BOOKED" | "CHECKED_IN")[];
 
@@ -318,6 +319,13 @@ export async function POST(
         customer,
       };
     });
+
+    const payload = await buildBookingPayload(result.booking.id);
+    if (payload) {
+      dispatchWebhook(business.id, "booking.created", payload).catch((e) =>
+        console.error("Webhook dispatch failed:", e)
+      );
+    }
 
     const customerRecord = result.customer as { phone?: string | null; email?: string | null };
     const customerPhone = customerRecord.phone?.trim();

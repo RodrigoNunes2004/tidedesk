@@ -12,6 +12,7 @@ type Lesson = {
   id: string;
   title: string;
   price: number;
+  depositAmount: number | null;
   durationMinutes: number;
   capacity: number | null;
 };
@@ -35,6 +36,7 @@ type SchoolData = {
     timezone: string;
     currency: string;
     canAcceptPayments: boolean;
+    hasDeposits?: boolean;
     onlineBookingEnabled?: boolean;
     onlineBookingMessage?: string | null;
   };
@@ -165,6 +167,7 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
   const [boardVariantId, setBoardVariantId] = useState("");
   const [wetsuitVariantId, setWetsuitVariantId] = useState("");
   const [payLater, setPayLater] = useState(false);
+  const [payDepositOnly, setPayDepositOnly] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -280,7 +283,10 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
           {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ bookingId: id }),
+            body: JSON.stringify({
+              bookingId: id,
+              paymentType: payDepositOnly ? "deposit" : "full",
+            }),
           }
         );
         const checkoutData = (await checkoutRes.json().catch(() => null)) as {
@@ -552,23 +558,51 @@ export function PublicBookingForm({ businessSlug }: { businessSlug: string }) {
           {data.business.canAcceptPayments && (
             <div className="grid gap-2">
               <Label>Payment</Label>
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-2">
                 <label className="flex cursor-pointer items-center gap-2">
                   <input
                     type="radio"
                     name="payment"
-                    checked={!payLater}
-                    onChange={() => setPayLater(false)}
+                    checked={!payLater && !payDepositOnly}
+                    onChange={() => {
+                      setPayLater(false);
+                      setPayDepositOnly(false);
+                    }}
                     className="size-4"
                   />
-                  <span>Pay now (card)</span>
+                  <span>
+                    Pay full now (
+                    {currencySymbol}
+                    {selectedLesson ? (selectedLesson.price * participants).toFixed(2) : "0.00"})
+                  </span>
                 </label>
+                {data.business.hasDeposits && selectedLesson?.depositAmount != null && selectedLesson.depositAmount > 0 && (
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked={!payLater && payDepositOnly}
+                      onChange={() => {
+                        setPayLater(false);
+                        setPayDepositOnly(true);
+                      }}
+                      className="size-4"
+                    />
+                    <span>
+                      Pay deposit ({currencySymbol}
+                      {(selectedLesson.depositAmount * participants).toFixed(2)}) now, rest on arrival
+                    </span>
+                  </label>
+                )}
                 <label className="flex cursor-pointer items-center gap-2">
                   <input
                     type="radio"
                     name="payment"
                     checked={payLater}
-                    onChange={() => setPayLater(true)}
+                    onChange={() => {
+                      setPayLater(true);
+                      setPayDepositOnly(false);
+                    }}
                     className="size-4"
                   />
                   <span>Pay on arrival</span>

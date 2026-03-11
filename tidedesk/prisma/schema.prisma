@@ -51,6 +51,8 @@ model Business {
   subscription Subscription?
   notifications Notification[]
   weatherSnapshots WeatherSnapshot[]
+  apiKeys        ApiKey[]
+  webhookEndpoints WebhookEndpoint[]
 }
 
 model WeatherSnapshot {
@@ -165,6 +167,7 @@ model Lesson {
 
   title       String
   price       Decimal   @db.Decimal(10,2)
+  depositAmount Decimal? @db.Decimal(10,2)  // Optional deposit for "pay now, rest at beach"
   capacity    Int?
   durationMinutes Int @default(60)
 
@@ -194,6 +197,8 @@ model Booking {
   participants       Int @default(1)
   status             BookingStatus @default(BOOKED)
   externalReference  String?  // FareHarbor/Stripe booking ID
+  depositPaid       Decimal  @db.Decimal(10,2) @default(0)  // Total amount paid toward this booking
+  balanceRemaining  Decimal? @db.Decimal(10,2)  // Cached: total - depositPaid (null when fully paid)
 
   equipmentAllocations BookingEquipmentAllocation[]
 
@@ -444,4 +449,38 @@ model InstructorInvite {
 
   @@unique([businessId, email])
   @@index([token])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+
+  name        String
+  keyPrefix   String
+  keyHash     String
+  lastUsedAt  DateTime?
+
+  createdAt   DateTime @default(now())
+
+  @@index([businessId])
+  @@index([keyPrefix])
+}
+
+model WebhookEndpoint {
+  id          String   @id @default(cuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+
+  url         String   @db.Text
+  secret      String
+  events      String   @db.Text
+  isActive    Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  lastError   String?  @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([businessId])
 }

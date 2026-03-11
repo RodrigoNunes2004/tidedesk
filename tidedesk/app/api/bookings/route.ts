@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolveBusinessId } from "../_lib/tenant";
 import { validateLessonEndTime } from "@/lib/lesson-hours";
+import { dispatchWebhook, buildBookingPayload } from "@/lib/webhooks/dispatch";
 
 const BOOKING_STATUSES = Object.values(BookingStatus);
 const ACTIVE_LESSON_BOOKING_STATUSES = ["BOOKED", "CHECKED_IN"] as BookingStatus[];
@@ -349,6 +350,12 @@ export async function POST(req: NextRequest) {
         return created;
       });
 
+      const payload = await buildBookingPayload(booking.id);
+      if (payload) {
+        dispatchWebhook(businessId, "booking.created", payload).catch((e) =>
+          console.error("Webhook dispatch failed:", e)
+        );
+      }
       return NextResponse.json({ data: booking }, { status: 201 });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -387,6 +394,12 @@ export async function POST(req: NextRequest) {
     } as Parameters<typeof prisma.booking.create>[0]["data"],
   });
 
+  const payload = await buildBookingPayload(booking.id);
+  if (payload) {
+    dispatchWebhook(businessId, "booking.created", payload).catch((e) =>
+      console.error("Webhook dispatch failed:", e)
+    );
+  }
   return NextResponse.json({ data: booking }, { status: 201 });
 }
 

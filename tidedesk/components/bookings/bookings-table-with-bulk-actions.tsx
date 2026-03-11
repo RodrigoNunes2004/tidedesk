@@ -35,8 +35,10 @@ type Booking = {
   endAt: Date | string;
   status: BookingStatus;
   participants: number;
+  depositPaid?: unknown;
+  balanceRemaining?: unknown;
   rental: { id: string } | null;
-  lesson: { title: string; durationMinutes: number | null; price: unknown } | null;
+  lesson: { title: string; durationMinutes: number | null; price: unknown; depositAmount?: unknown } | null;
   customer: { firstName: string; lastName: string };
   instructor: { firstName: string; lastName: string } | null;
   payments?: { id: string }[];
@@ -326,13 +328,19 @@ export function BookingsTableWithBulkActions({
               const canCancel = b.status === BookingStatus.BOOKED && new Date(b.startAt) > now;
               const canCheckIn = b.status === BookingStatus.BOOKED && !b.rental;
               const canComplete = b.status === BookingStatus.CHECKED_IN;
-              const hasStripePayment = (b.payments?.length ?? 0) > 0;
+              const totalAmount = Number(b.lesson?.price ?? 0) * b.participants;
+              const depositPaid = Number(b.depositPaid ?? 0);
+              const balanceRemaining = Number(b.balanceRemaining ?? totalAmount - depositPaid);
+              const isFullyPaid = depositPaid >= totalAmount - 0.01;
               const canPay =
                 business?.chargesEnabled &&
                 business?.stripeAccountId &&
                 b.lesson &&
-                !hasStripePayment &&
+                !isFullyPaid &&
                 (b.status === BookingStatus.BOOKED || b.status === BookingStatus.CHECKED_IN);
+              const hasDepositOption = Number(b.lesson?.depositAmount ?? 0) > 0;
+              const canPayDeposit = canPay && depositPaid === 0 && hasDepositOption;
+              const canPayBalance = canPay && depositPaid > 0 && balanceRemaining > 0.01;
 
               return (
                 <TableRow
@@ -374,10 +382,30 @@ export function BookingsTableWithBulkActions({
                   <TableCell>{statusBadge(b.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex flex-wrap justify-end gap-1 sm:gap-2">
-                      {canPay ? (
+                      {canPayBalance ? (
                         <PayBookingButton
                           bookingId={b.id}
-                          amount={formatCurrency(Number(b.lesson!.price) * b.participants, business?.currency)}
+                          amount={formatCurrency(balanceRemaining, business?.currency)}
+                          paymentType="balance"
+                        />
+                      ) : canPayDeposit ? (
+                        <div className="flex flex-col items-end gap-1">
+                          <PayBookingButton
+                            bookingId={b.id}
+                            amount={formatCurrency(Number(b.lesson!.depositAmount ?? 0) * b.participants, business?.currency)}
+                            paymentType="deposit"
+                          />
+                          <PayBookingButton
+                            bookingId={b.id}
+                            amount={formatCurrency(totalAmount, business?.currency)}
+                            paymentType="full"
+                            variant="outline"
+                          />
+                        </div>
+                      ) : canPay ? (
+                        <PayBookingButton
+                          bookingId={b.id}
+                          amount={formatCurrency(totalAmount, business?.currency)}
                         />
                       ) : null}
                       {canCheckIn ? (

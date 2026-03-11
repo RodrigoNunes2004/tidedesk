@@ -18,6 +18,7 @@ export type LessonForEdit = {
   id: string;
   title: string;
   price: number | string;
+  depositAmount?: number | string | null;
   capacity: number | null;
   durationMinutes: number;
 };
@@ -43,6 +44,7 @@ export function CreateEditLessonDialog({
 
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
+  const [depositAmount, setDepositAmount] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [capacity, setCapacity] = useState("");
 
@@ -54,11 +56,13 @@ export function CreateEditLessonDialog({
     if (lesson) {
       setTitle(lesson.title);
       setPrice(String(lesson.price));
+      setDepositAmount(lesson.depositAmount != null && lesson.depositAmount !== "" ? String(lesson.depositAmount) : "");
       setDurationMinutes(String(lesson.durationMinutes ?? 60));
       setCapacity(lesson.capacity != null ? String(lesson.capacity) : "");
     } else {
       setTitle("");
       setPrice("");
+      setDepositAmount("");
       setDurationMinutes("60");
       setCapacity("");
     }
@@ -70,8 +74,15 @@ export function CreateEditLessonDialog({
     setLoading(true);
 
     const priceNum = Number(price);
+    const depositNum = depositAmount.trim() ? Number(depositAmount) : null;
     const durationNum = Math.trunc(Number(durationMinutes)) || 60;
     const capacityVal = capacity.trim() ? Math.trunc(Number(capacity)) : null;
+
+    if (depositNum !== null && (depositNum < 0 || depositNum > priceNum)) {
+      setError("Deposit must be between 0 and the lesson price.");
+      setLoading(false);
+      return;
+    }
 
     if (!title.trim()) {
       setError("Title is required.");
@@ -102,6 +113,7 @@ export function CreateEditLessonDialog({
           body: JSON.stringify({
             title: title.trim(),
             price: priceNum,
+            depositAmount: depositNum,
             durationMinutes: durationNum,
             capacity: capacityVal,
           }),
@@ -118,6 +130,7 @@ export function CreateEditLessonDialog({
           body: JSON.stringify({
             title: title.trim(),
             price: priceNum,
+            depositAmount: depositNum,
             durationMinutes: durationNum,
             capacity: capacityVal,
           }),
@@ -156,7 +169,7 @@ export function CreateEditLessonDialog({
             required
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
           <div className="grid gap-2">
             <Label htmlFor="lesson-price">Price (per person) *</Label>
             <Input
@@ -171,6 +184,20 @@ export function CreateEditLessonDialog({
             />
           </div>
           <div className="grid gap-2">
+            <Label htmlFor="lesson-deposit">Deposit (optional, Pro)</Label>
+            <Input
+              id="lesson-deposit"
+              type="number"
+              min={0}
+              step={0.01}
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+              placeholder="e.g. 20 for pay now, rest at beach"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-2">
             <Label htmlFor="lesson-duration">Duration (min) *</Label>
             <Input
               id="lesson-duration"
@@ -182,17 +209,17 @@ export function CreateEditLessonDialog({
               placeholder="60"
             />
           </div>
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="lesson-capacity">Capacity (optional)</Label>
-          <Input
-            id="lesson-capacity"
-            type="number"
-            min={0}
-            value={capacity}
-            onChange={(e) => setCapacity(e.target.value)}
-            placeholder="Leave empty for no limit"
-          />
+          <div className="grid gap-2">
+            <Label htmlFor="lesson-capacity">Capacity (optional)</Label>
+            <Input
+              id="lesson-capacity"
+              type="number"
+              min={0}
+              value={capacity}
+              onChange={(e) => setCapacity(e.target.value)}
+              placeholder="Leave empty for no limit"
+            />
+          </div>
         </div>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <div className="flex justify-end gap-2">

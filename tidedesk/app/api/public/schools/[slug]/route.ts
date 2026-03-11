@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getBusinessTier } from "@/lib/tiers/get-business-tier";
+import { hasFeature } from "@/lib/tiers";
 
 /**
  * GET /api/public/schools/[slug]
@@ -32,8 +34,19 @@ export async function GET(
       price: true,
       durationMinutes: true,
       capacity: true,
+      depositAmount: true,
+    } as {
+      id: boolean;
+      title: boolean;
+      price: boolean;
+      durationMinutes: boolean;
+      capacity: boolean;
+      depositAmount: boolean;
     },
   });
+
+  const tier = await getBusinessTier(business.id);
+  const hasDeposits = hasFeature(tier, "deposits");
 
   const allVariants = await prisma.equipmentVariant.findMany({
     where: {
@@ -74,6 +87,7 @@ export async function GET(
       canAcceptPayments: Boolean(
         business.stripeAccountId && business.chargesEnabled && business.payoutsEnabled
       ),
+      hasDeposits,
       onlineBookingEnabled: biz.onlineBookingEnabled ?? true,
       onlineBookingMessage: (biz.onlineBookingMessage ? String(biz.onlineBookingMessage).trim() : "") || null,
     },
@@ -81,6 +95,7 @@ export async function GET(
       id: l.id,
       title: l.title,
       price: Number(l.price),
+      depositAmount: l.depositAmount != null ? Number(l.depositAmount) : null,
       durationMinutes: l.durationMinutes,
       capacity: l.capacity,
     })),

@@ -50,7 +50,14 @@ export default async function BookingsPage({
       where: { businessId },
       orderBy: { createdAt: "desc" },
       take: 200,
-      select: { id: true, title: true, durationMinutes: true, capacity: true, price: true },
+      select: {
+        id: true,
+        title: true,
+        durationMinutes: true,
+        capacity: true,
+        price: true,
+        depositAmount: true,
+      } as { id: boolean; title: boolean; durationMinutes: boolean; capacity: boolean; price: boolean; depositAmount: boolean },
     }),
     prisma.instructor.findMany({
       where: { businessId, isActive: true },
@@ -77,7 +84,14 @@ export default async function BookingsPage({
       include: {
         customer: { select: { firstName: true, lastName: true } },
         instructor: { select: { firstName: true, lastName: true } },
-        lesson: { select: { title: true, durationMinutes: true, price: true } },
+        lesson: {
+          select: { title: true, durationMinutes: true, price: true, depositAmount: true } as {
+            title: boolean;
+            durationMinutes: boolean;
+            price: boolean;
+            depositAmount: boolean;
+          },
+        },
         rental: { select: { id: true } },
         payments: {
           where: { provider: "STRIPE", status: "PAID" },
@@ -89,17 +103,45 @@ export default async function BookingsPage({
 
   const now = new Date();
 
+  type BookingWithRelations = typeof bookings[number] & {
+    depositPaid?: unknown;
+    balanceRemaining?: unknown;
+    rental: { id: string } | null;
+    lesson: { title: string; durationMinutes: number | null; price: unknown; depositAmount?: unknown } | null;
+    customer: { firstName: string; lastName: string };
+    instructor: { firstName: string; lastName: string } | null;
+    payments?: { id: string }[];
+  };
+  const bookingsForTable = (bookings as BookingWithRelations[]).map((b) => ({
+    id: b.id,
+    startAt: b.startAt,
+    endAt: b.endAt,
+    status: b.status,
+    participants: b.participants,
+    depositPaid: b.depositPaid,
+    balanceRemaining: b.balanceRemaining,
+    rental: b.rental,
+    lesson: b.lesson,
+    customer: b.customer,
+    instructor: b.instructor,
+    payments: b.payments,
+  }));
+
   const paymentSuccess = sp.payment === "success";
   const activeTab = (sp.tab ?? "bookings").toLowerCase();
   const showLessons = activeTab === "lessons";
 
-  const lessonsForClient = lessons.map((l) => ({
-    id: l.id,
-    title: l.title,
-    durationMinutes: l.durationMinutes,
-    capacity: l.capacity,
-    price: Number(l.price),
-  }));
+  const lessonsForClient = lessons.map((l) => {
+    const lWithDep = l as typeof l & { depositAmount?: unknown };
+    return {
+      id: l.id,
+      title: l.title,
+      durationMinutes: l.durationMinutes,
+      capacity: l.capacity,
+      price: Number(l.price),
+      depositAmount: lWithDep.depositAmount != null ? Number(lWithDep.depositAmount) : null,
+    };
+  });
 
   return (
     <div className="min-w-0 grid gap-4">
@@ -181,7 +223,7 @@ export default async function BookingsPage({
         </CardHeader>
         <CardContent>
           <BookingsTableWithBulkActions
-            bookings={bookings}
+            bookings={bookingsForTable}
             business={business}
             now={now}
           />

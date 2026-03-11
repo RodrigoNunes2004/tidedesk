@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireStaffOrOwner } from "@/lib/server/role";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,8 +10,11 @@ import { InstructorsSection } from "@/components/settings/instructors-section";
 import { PaymentSettingsForm } from "@/components/settings/payment-settings-form";
 import { StripeConnectSection } from "@/components/settings/stripe-connect-section";
 import { OnlineBookingSection } from "@/components/settings/online-booking-section";
+import { ApiKeysSection } from "@/components/settings/api-keys-section";
+import { WebhookEndpointsSection } from "@/components/settings/webhook-endpoints-section";
+import { FeatureGate } from "@/lib/tiers/feature-gate";
 import { prisma } from "@/lib/prisma";
-import { Building2, CreditCard, DollarSign, Plug, User, Users } from "lucide-react";
+import { Building2, CreditCard, DollarSign, Key, Plug, User, Users } from "lucide-react";
 
 type SearchParams = Promise<{ tab?: string; stripe_connected?: string; error?: string }>;
 
@@ -19,6 +23,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
   const defaultTab =
     params.tab === "payment" ||
     params.tab === "integrations" ||
+    params.tab === "api" ||
     params.tab === "billing" ||
     params.tab === "profile" ||
     params.tab === "instructors" ||
@@ -45,7 +50,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
       </div>
 
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <TabsList className="flex w-full max-w-3xl flex-wrap gap-1 sm:grid sm:grid-cols-3 lg:grid-cols-6">
+        <TabsList className="flex w-full max-w-3xl flex-wrap gap-1 sm:grid sm:grid-cols-3 lg:grid-cols-7">
           <TabsTrigger value="account" className="flex items-center gap-2">
             <User className="size-4" />
             Account
@@ -65,6 +70,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Plug className="size-4" />
             Integrations
+          </TabsTrigger>
+          <TabsTrigger value="api" className="flex items-center gap-2">
+            <Key className="size-4" />
+            API
           </TabsTrigger>
           <TabsTrigger value="payment" className="flex items-center gap-2">
             <CreditCard className="size-4" />
@@ -148,6 +157,43 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
               <IntegrationsSection />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="api" className="space-y-4">
+          <FeatureGate
+            feature="api"
+            fallback={
+              <Card>
+                <CardHeader>
+                  <CardTitle>API Access</CardTitle>
+                  <CardDescription>
+                    REST API and webhooks are available on Premium. Upgrade to create API keys and receive webhook events.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link
+                    href="/pricing"
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Upgrade to Premium →
+                  </Link>
+                </CardContent>
+              </Card>
+            }
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>API Access</CardTitle>
+                <CardDescription>
+                  REST API and webhooks for Premium. Create API keys and webhook endpoints to integrate with your apps.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                <ApiKeysSection />
+                <WebhookEndpointsSection />
+              </CardContent>
+            </Card>
+          </FeatureGate>
         </TabsContent>
 
         <TabsContent value="payment" className="space-y-4">
