@@ -56,18 +56,18 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-white/70" aria-hidden />
         <LandingHeader />
 
-        <section className="relative container mx-auto px-4 py-12 sm:py-16 md:py-24 lg:py-32 text-center">
+        <section className="relative container mx-auto px-4 pt-6 pb-24 sm:py-16 md:py-24 lg:py-32 text-center">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl px-2">
             TideDesk
           </h1>
-          <p className="mt-4 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-2">
+          <p className="mt-2 sm:mt-4 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-2">
             Management Software for Surf Schools
           </p>
-          <p className="mt-2 text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto px-2">
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto px-2">
             Bookings, equipment tracking, instructors and revenue — all in one
             place.
           </p>
-          <div className="mt-8 sm:mt-10">
+          <div className="mt-4 sm:mt-8 md:mt-10">
             <StartTrialButton size="lg" />
           </div>
         </section>

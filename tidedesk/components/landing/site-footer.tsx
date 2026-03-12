@@ -23,7 +23,7 @@ export function SiteFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t bg-muted/30">
+    <footer className="border-t border-primary/20 bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
@@ -33,7 +33,7 @@ export function SiteFooter() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground"
+                    className="text-sm text-primary-foreground/85 hover:text-primary-foreground"
                   >
                     {link.label}
                   </Link>
@@ -42,7 +42,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/login"
-                  className="text-sm text-muted-foreground hover:text-foreground"
+                  className="text-sm text-primary-foreground/85 hover:text-primary-foreground"
                 >
                   Sign in
                 </Link>
@@ -50,7 +50,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/register"
-                  className="text-sm text-muted-foreground hover:text-foreground"
+                  className="text-sm text-primary-foreground/85 hover:text-primary-foreground"
                 >
                   Start Free Trial
                 </Link>
@@ -64,7 +64,7 @@ export function SiteFooter() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground"
+                    className="text-sm text-primary-foreground/85 hover:text-primary-foreground"
                   >
                     {link.label}
                   </Link>
@@ -79,7 +79,7 @@ export function SiteFooter() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground"
+                    className="text-sm text-primary-foreground/85 hover:text-primary-foreground"
                   >
                     {link.label}
                   </Link>
@@ -88,7 +88,7 @@ export function SiteFooter() {
             </ul>
           </div>
         </div>
-        <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
+        <div className="mt-8 border-t border-primary-foreground/20 pt-8 text-center text-sm text-primary-foreground/85">
           © {currentYear} TideDesk
         </div>
       </div>
