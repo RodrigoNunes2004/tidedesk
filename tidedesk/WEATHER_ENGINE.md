@@ -79,6 +79,216 @@
 
 ---
 
+## Weather & WindGuru Flow (testing guide)
+
+### End-to-end data flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 1. CONFIGURATION (Settings → Business)                                            │
+│    • Latitude, Longitude → used for Stormglass API location                        │
+│    • WindGuru spot ID (optional) → used only for "View on WindGuru" link           │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 2. TIER CHECK                                                                     │
+│    • Marine forecast requires Premium (or active 30-day free trial)                │
+│    • If Starter/Pro: widget hidden, API returns 403                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 3. MARINE FORECAST WIDGET (Dashboard, Bookings, Beach)                            │
+│    • Calls GET /api/weather/forecast (client-side)                                │
+│    • API: getBusinessTier → hasFeature(windguru) → business lat/lng                │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 4. WEATHER SERVICE                                                                │
+│    • getCachedOrFetchWeather(businessId, lat, lng, 24)                            │
+│    • If cache fresh (< 1h): return WeatherSnapshot rows                           │
+│    • Else: fetchWeatherForecast() → Stormglass API → upsert cache → return        │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 5. STORMGLASS API                                                                 │
+│    • /v2/marine/point (wind, swell) + /v2/tide/sea-level/point (tide)              │
+│    • Returns hourly points for next 24h                                            │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 6. UI DISPLAY                                                                     │
+│    • Hourly cards: wind (kt), swell (m), tide (when available)                    │
+│    • If windguruSpotId set: "View on WindGuru →" link to windguru.cz/{spotId}      │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Note:** We do **not** call WindGuru’s API. Forecast data comes from Stormglass. WindGuru spot ID is only used to build a direct link to the matching spot on windguru.cz.
+
+---
+
+### How to test the flow
+
+| Step | What to do |
+|------|------------|
+| 1. Prerequisites | Ensure `STORMGLASS_API_KEY` is in `.env` (and Vercel env in production). |
+| 2. Premium/Trial | Business must be Premium or on 30-day trial. Check `subscription` table or start a trial. |
+| 3. Coordinates | Settings → Business → set Latitude (`-37.639`) and Longitude (`176.185`) for Mount Maunganui, Save. |
+| 4. WindGuru link (optional) | Settings → Business → WindGuru spot ID: `53` (Mount Maunganui). Save. |
+| 5. View widget | Go to Dashboard, Bookings, or Beach page. The "Surf conditions" card should appear. |
+| 6. Inspect API | While logged in, open DevTools → Network. Filter for `forecast`. You should see `GET /api/weather/forecast` returning `{ data: [...], windguruSpotId: "53" }`. |
+| 7. Test cron (optional) | `curl -H "Authorization: Bearer YOUR_CRON_SECRET" http://localhost:3000/api/cron/weather` |
+
+### Expected responses
+
+- **403** – `"WindGuru / marine forecast requires Premium"` – business is Starter/Pro and not trialing.
+- **Empty data + message** – `"Set latitude and longitude in Settings → Business to see forecast"` – coordinates missing.
+- **200 + data** – Array of hourly `{ timestamp, windSpeed, swellHeight, tideLevel }` plus optional `windguruSpotId`.
+
+### Where the widget appears
+
+- **Dashboard** (`/dashboard`)
+- **Bookings** (`/bookings`)
+- **Beach** (`/beach`) – requires `pos` feature (Premium) and `windguru` feature
+
+---
+
+## Testing Weather & WindGuru (Flow & Test Steps)
+
+### Flow overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  1. User visits Dashboard / Bookings / Beach                                │
+│     (must have Premium or active trial for windguru feature)                 │
+└─────────────────────────────────┬───────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  2. MarineForecastWidget mounts → GET /api/weather/forecast                  │
+└─────────────────────────────────┬───────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  3. API checks: authenticated? Premium/trial? business lat/lng set?         │
+│     • 401 if not logged in                                                   │
+│     • 403 if not Premium (or trial)                                          │
+│     • { data: [], message } if lat/lng missing                               │
+└─────────────────────────────────┬───────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  4. getCachedOrFetchWeather(businessId, lat, lng)                           │
+│     • Uses WeatherSnapshot cache if recent (1h TTL)                          │
+│     • Otherwise calls Stormglass (marine + tide) → saves to cache            │
+└─────────────────────────────────┬───────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  5. Response: { data: [...], windguruSpotId }                                 │
+│     • data: hourly wind (kt), swell (m), tide for 24h                        │
+│     • windguruSpotId: from Business (optional) for "View on WindGuru" link    │
+└─────────────────────────────────┬───────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  6. Widget shows: hourly cards (wind, swell) + "View on WindGuru →" link     │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Note:** TideDesk uses **Stormglass** for forecast data (wind, swell, tide). WindGuru is not called as an API. The `windguruSpotId` is only used to add a link to windguru.cz so users can open that spot there.
+
+---
+
+### Prerequisites
+
+| Requirement | Where | Notes |
+|-------------|-------|-------|
+| `STORMGLASS_API_KEY` | `.env` or Vercel env vars | Get from [stormglass.io](https://stormglass.io/) |
+| Premium tier or active trial | Subscription | During 30-day trial, business gets Premium |
+| Latitude & longitude | Settings → Business | e.g. Mount Maunganui: `-37.639`, `176.185` |
+| WindGuru spot ID (optional) | Settings → Business | Find on windguru.cz (e.g. `/53` → `53`) |
+
+---
+
+### Test steps
+
+#### 1. Configure env & business
+
+1. Add `STORMGLASS_API_KEY` to `.env` (or Vercel).
+2. Log in and go to **Settings → Business**.
+3. Set **Latitude** and **Longitude** (e.g. Mount Maunganui: `-37.639`, `176.185`).
+4. Optionally set **WindGuru spot ID** (e.g. `53` for Mount Maunganui).
+
+#### 2. Ensure Premium/trial access
+
+- **New business:** Has 30-day trial → Premium → windguru enabled.
+- **Existing business:** Needs Premium subscription, or seed a trial in `Subscription`:
+
+  ```sql
+  -- In prisma studio or raw SQL, ensure subscription exists with trial
+  UPDATE "Subscription" SET "trialEndsAt" = NOW() + INTERVAL '30 days' WHERE "businessId" = 'your-business-id';
+  ```
+
+#### 3. Test the widget in the UI
+
+1. Go to **Dashboard** — the "Surf conditions" card appears at the top (Premium).
+2. Go to **Bookings** — same widget in the sidebar/tab area.
+3. Go to **Beach** (requires POS) — same widget when you have Premium.
+
+If you see "Loading forecast…" then "Set latitude and longitude in Settings → Business to see forecast", lat/lng are missing.
+
+#### 4. Test the API directly
+
+```bash
+# While logged in (or use a session cookie), call:
+curl -b "next-auth.session-token=YOUR_SESSION" http://localhost:3000/api/weather/forecast
+```
+
+Expected when everything is configured:
+
+```json
+{
+  "data": [
+    { "timestamp": "2026-03-11T...", "windSpeed": 12, "swellHeight": 1.2, "tideLevel": 0.8 },
+    ...
+  ],
+  "windguruSpotId": "53"
+}
+```
+
+#### 5. Test the weather cron (WEATHER_ALERT)
+
+```bash
+# If CRON_SECRET is set:
+curl -H "Authorization: Bearer YOUR_CRON_SECRET" http://localhost:3000/api/cron/weather
+```
+
+Response:
+
+```json
+{ "businesses": 1, "alertsSent": 0 }
+```
+
+Alerts are sent only when `windSpeed >= 25kt` or `swellHeight >= 2m`. To test alerts, you’d need to mock those values or wait for real conditions.
+
+---
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| "WindGuru / marine forecast requires Premium" | Business not Premium or trial | Check subscription / trialEndsAt |
+| "Set latitude and longitude in Settings…" | Business lat/lng null | Add lat/lng in Settings → Business |
+| "Failed to load forecast" | Network or Stormglass error | Check STORMGLASS_API_KEY and Stormglass status |
+| Empty `data` array | Stormglass returns no data or API key invalid | Verify key and coordinates |
+
+---
+
 ## Next Features (recap)
 
 | Feature                     | Status   | Notes                                                                 |

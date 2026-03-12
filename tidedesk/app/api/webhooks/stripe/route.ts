@@ -196,6 +196,44 @@ export async function POST(req: NextRequest) {
           resolvedBusinessId = r?.businessId ?? null;
         }
 
+        // Subscription checkout for existing users (upgrade from Settings → Billing)
+        if (session.mode === "subscription" && resolvedBusinessId) {
+          const subscriptionId =
+            typeof session.subscription === "string"
+              ? session.subscription
+              : session.subscription?.id;
+          const customerId =
+            typeof session.customer === "string"
+              ? session.customer
+              : session.customer?.id;
+          if (subscriptionId && customerId) {
+            const stripe = getStripe();
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            const priceId = sub.items?.data?.[0]?.price?.id;
+            const plan = priceId ? planFromPriceId(priceId) : (metadata?.plan as string) ?? "starter";
+            const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
+
+            await prisma.subscription.upsert({
+              where: { businessId: resolvedBusinessId },
+              create: {
+                businessId: resolvedBusinessId,
+                stripeCustomerId: customerId,
+                stripeSubscriptionId: subscriptionId,
+                status: sub.status ?? "trialing",
+                plan,
+                trialEndsAt: trialEnd,
+              },
+              update: {
+                stripeCustomerId: customerId,
+                stripeSubscriptionId: subscriptionId,
+                status: sub.status ?? "trialing",
+                plan,
+                trialEndsAt: trialEnd,
+              },
+            });
+          }
+        }
+
         const pi = typeof session.payment_intent === "string"
           ? session.payment_intent
           : session.payment_intent?.id;

@@ -57,7 +57,7 @@ export default function LandingPage() {
         <LandingHeader />
 
         <section className="relative container mx-auto px-4 pt-6 pb-24 sm:py-16 md:py-24 lg:py-32 text-center">
-<h1 className="hidden sm:block text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl px-2">
+          <h1 className="hidden sm:block text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl px-2">
             TideDesk
           </h1>
           <p className="mt-2 sm:mt-4 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-2">

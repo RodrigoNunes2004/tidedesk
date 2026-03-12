@@ -33,12 +33,17 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
   const session = await requireStaffOrOwner();
   const businessId = session.user.businessId;
 
-  const [business, currentUser] = await Promise.all([
+  const [business, currentUser, subscription] = await Promise.all([
     prisma.business.findUniqueOrThrow({ where: { id: businessId } }),
     prisma.user.findUnique({ where: { id: session.user.id } }),
+    prisma.subscription.findUnique({
+      where: { businessId },
+      select: { stripeCustomerId: true },
+    }),
   ]);
 
   const avatarUrl = (currentUser as { avatarUrl?: string | null } | null)?.avatarUrl ?? null;
+  const hasSubscription = Boolean(subscription?.stripeCustomerId);
 
   return (
     <div className="space-y-6">
@@ -127,7 +132,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
         </TabsContent>
 
         <TabsContent value="billing" className="space-y-4">
-          <BillingSection />
+          <BillingSection hasSubscription={hasSubscription} />
         </TabsContent>
 
         <TabsContent value="instructors" className="space-y-4">
