@@ -41,7 +41,7 @@ export function LandingHeader() {
 
   return (
     <header className="relative border-b border-black/5">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-16 min-w-0 items-center justify-between gap-2 px-4 sm:gap-4">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <Image
             src="/TD_logo.png"
@@ -53,8 +53,8 @@ export function LandingHeader() {
           <span className="font-semibold text-lg">TideDesk</span>
         </Link>
 
-        {/* Desktop nav - hidden on mobile */}
-        <nav className="hidden md:flex items-center gap-4">
+        {/* Desktop nav - hidden below lg to avoid overlap on tablets/small desktops */}
+        <nav className="hidden lg:flex items-center gap-4">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -84,7 +84,7 @@ export function LandingHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden shrink-0"
+              className="lg:hidden shrink-0 min-h-[44px] min-w-[44px]"
               aria-label="Open menu"
             >
               <Menu className="size-6" />
@@ -128,7 +128,7 @@ export function LandingHeader() {
         )}
         {/* Placeholder to prevent layout shift before Sheet mounts */}
         {!mounted && (
-          <div className="md:hidden size-10 shrink-0" aria-hidden />
+          <div className="lg:hidden size-11 shrink-0" aria-hidden />
         )}
       </div>
     </header>

@@ -9,16 +9,16 @@ export default function PricingPage() {
     <div className="min-h-screen bg-background">
       <LandingHeader />
 
-      <main className="container mx-auto px-4 py-20">
-        <h1 className="text-3xl font-bold text-center mb-4">Pricing</h1>
-        <p className="text-center text-muted-foreground mb-12">
+      <main className="container mx-auto px-4 py-12 sm:py-20">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4">Pricing</h1>
+        <p className="text-center text-muted-foreground mb-8 sm:mb-12 text-sm sm:text-base">
           30-day free trial on all plans. Upgrade or downgrade anytime.
         </p>
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {PLANS.map((p) => (
             <div
               key={p.plan}
-              className={`relative rounded-xl border bg-card p-6 shadow-sm ${
+              className={`relative rounded-xl border bg-card p-4 sm:p-6 shadow-sm min-w-0 ${
                 p.popular ? "border-primary ring-2 ring-primary/20" : ""
               }`}
             >

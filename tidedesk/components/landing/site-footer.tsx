@@ -25,7 +25,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-primary/20 bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <h3 className="font-semibold">Product</h3>
             <ul className="mt-3 space-y-2">
@@ -33,7 +33,7 @@ export function SiteFooter() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-primary-foreground/85 hover:text-primary-foreground"
+                    className="text-sm text-primary-foreground/90 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/50"
                   >
                     {link.label}
                   </Link>
@@ -42,7 +42,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/login"
-                  className="text-sm text-primary-foreground/85 hover:text-primary-foreground"
+                  className="text-sm text-primary-foreground/90 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/50"
                 >
                   Sign in
                 </Link>
@@ -50,7 +50,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/register"
-                  className="text-sm text-primary-foreground/85 hover:text-primary-foreground"
+                  className="text-sm text-primary-foreground/90 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/50"
                 >
                   Start Free Trial
                 </Link>
@@ -64,7 +64,7 @@ export function SiteFooter() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-primary-foreground/85 hover:text-primary-foreground"
+                    className="text-sm text-primary-foreground/90 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/50"
                   >
                     {link.label}
                   </Link>
@@ -79,7 +79,7 @@ export function SiteFooter() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-primary-foreground/85 hover:text-primary-foreground"
+                    className="text-sm text-primary-foreground/90 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/50"
                   >
                     {link.label}
                   </Link>
@@ -89,7 +89,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-8 border-t border-primary-foreground/20 pt-8 text-center text-sm text-primary-foreground/85">
-          © {currentYear} TideDesk
+          © {currentYear} TideDesk. All rights reserved.
         </div>
       </div>
     </footer>

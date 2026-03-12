@@ -215,9 +215,9 @@ export default async function BookingsPage({
 
           <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-4">
-            <CardTitle className="text-base">Recent bookings</CardTitle>
-            <div className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <CardTitle className="text-base shrink-0">Recent bookings</CardTitle>
+            <div className="text-sm text-muted-foreground shrink-0">
               Status:{" "}
               <span className="font-medium text-foreground">
                 {statusRaw === "history"

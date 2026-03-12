@@ -53,7 +53,7 @@ export function BeachCheckInSection({ bookings }: { bookings: Booking[] }) {
             return (
               <div
                 key={b.id}
-                className="flex items-center justify-between gap-3 rounded-lg border bg-background p-3"
+                className="flex flex-col gap-3 rounded-lg border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-foreground">{label}</p>

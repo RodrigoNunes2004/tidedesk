@@ -55,33 +55,33 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
       </div>
 
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <TabsList className="flex w-full max-w-3xl flex-wrap gap-1 sm:grid sm:grid-cols-3 lg:grid-cols-7">
-          <TabsTrigger value="account" className="flex items-center gap-2">
+        <TabsList className="flex w-full max-w-3xl flex-nowrap gap-1 overflow-x-auto pb-1 sm:grid sm:flex-none sm:grid-cols-3 lg:grid-cols-7">
+          <TabsTrigger value="account" className="flex shrink-0 items-center gap-2">
             <User className="size-4" />
             Account
           </TabsTrigger>
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <Building2 className="size-4" />
-            Business
+          <TabsTrigger value="profile" className="flex shrink-0 items-center gap-2">
+            <Building2 className="size-4 shrink-0" />
+            <span className="hidden sm:inline">Business</span>
           </TabsTrigger>
-          <TabsTrigger value="billing" className="flex items-center gap-2">
-            <DollarSign className="size-4" />
+          <TabsTrigger value="billing" className="flex shrink-0 items-center gap-2">
+            <DollarSign className="size-4 shrink-0" />
             Billing
           </TabsTrigger>
-          <TabsTrigger value="instructors" className="flex items-center gap-2">
-            <Users className="size-4" />
-            Instructors
+          <TabsTrigger value="instructors" className="flex shrink-0 items-center gap-2">
+            <Users className="size-4 shrink-0" />
+            <span className="hidden sm:inline">Instructors</span>
           </TabsTrigger>
-          <TabsTrigger value="integrations" className="flex items-center gap-2">
-            <Plug className="size-4" />
-            Integrations
+          <TabsTrigger value="integrations" className="flex shrink-0 items-center gap-2">
+            <Plug className="size-4 shrink-0" />
+            <span className="hidden sm:inline">Integrations</span>
           </TabsTrigger>
-          <TabsTrigger value="api" className="flex items-center gap-2">
-            <Key className="size-4" />
+          <TabsTrigger value="api" className="flex shrink-0 items-center gap-2">
+            <Key className="size-4 shrink-0" />
             API
           </TabsTrigger>
-          <TabsTrigger value="payment" className="flex items-center gap-2">
-            <CreditCard className="size-4" />
+          <TabsTrigger value="payment" className="flex shrink-0 items-center gap-2">
+            <CreditCard className="size-4 shrink-0" />
             Payment
           </TabsTrigger>
         </TabsList>

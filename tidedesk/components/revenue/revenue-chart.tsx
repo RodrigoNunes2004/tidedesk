@@ -90,11 +90,11 @@ export function RevenueChart({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <h3 className="text-base font-semibold">Revenue over time</h3>
           <p className="text-sm text-muted-foreground">{rangeLabel}</p>
         </div>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex min-w-0 flex-nowrap gap-1 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
           <Link
             href={`/revenue?range=${dailyRange}`}
             className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -142,11 +142,11 @@ export function RevenueChart({
         </div>
       </div>
 
-      <div className="h-64 w-full">
+      <div className="h-64 min-h-[200px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
-            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            margin={{ top: 10, right: 10, left: 8, bottom: 0 }}
           >
             <defs>
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
@@ -163,10 +163,10 @@ export function RevenueChart({
             />
             <YAxis
               tickFormatter={(v) => `${currencySymbol}${v}`}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 10 }}
               tickLine={false}
               axisLine={false}
-              width={50}
+              width={52}
               domain={[0, Math.ceil(maxAmount * 1.1)]}
             />
             <Tooltip

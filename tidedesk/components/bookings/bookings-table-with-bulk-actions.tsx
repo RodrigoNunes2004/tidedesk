@@ -183,8 +183,8 @@ export function BookingsTableWithBulkActions({
   return (
     <>
       {/* Quick select + bulk actions bar */}
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-4 py-3">
-        <span className="text-sm font-medium">Quick select:</span>
+      <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-3 py-3 sm:px-4">
+        <span className="text-sm font-medium shrink-0">Quick select:</span>
         <Button variant="ghost" size="sm" onClick={selectAll}>
           All on page
         </Button>
@@ -211,7 +211,7 @@ export function BookingsTableWithBulkActions({
       </div>
 
       {someSelected && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-4 py-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg border bg-muted/30 px-3 py-3 sm:px-4">
           <span className="text-sm font-medium">
             {selected.size} selected
           </span>

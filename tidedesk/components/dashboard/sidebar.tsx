@@ -39,18 +39,18 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
 
   return (
     <aside className="flex h-full w-full min-w-0 flex-col border-r bg-sidebar text-sidebar-foreground md:w-64">
-      <div className="flex items-center justify-between gap-2 px-4 py-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 px-4 py-4 min-w-0">
+        <Link href="/dashboard" className="flex min-w-0 flex-1 items-center gap-2">
           <Image
             src="/TD_logo.png"
             alt="TideDesk"
             width={48}
             height={48}
-            className="h-12 w-auto shrink-0"
+            className="h-10 w-10 shrink-0 sm:h-12 sm:w-12"
           />
-          <span className="font-semibold tracking-tight">TideDesk</span>
+          <span className="truncate font-semibold tracking-tight">TideDesk</span>
         </Link>
-        <Badge variant="secondary" className="text-xs">
+        <Badge variant="secondary" className="shrink-0 text-xs">
           Internal
         </Badge>
       </div>

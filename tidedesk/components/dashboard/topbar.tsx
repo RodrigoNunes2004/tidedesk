@@ -41,7 +41,7 @@ export function DashboardTopbar({ onOpenNav }: { onOpenNav: () => void }) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 shrink-0 md:hidden"
+          className="min-h-[44px] min-w-[44px] h-10 w-10 shrink-0 md:hidden touch-manipulation"
           onClick={onOpenNav}
           aria-label="Open navigation"
         >
@@ -54,7 +54,7 @@ export function DashboardTopbar({ onOpenNav }: { onOpenNav: () => void }) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-10 gap-2 px-2">
+          <Button variant="ghost" className="min-h-[44px] min-w-[44px] h-10 gap-2 px-2 touch-manipulation">
             <Avatar className="size-8">
               {mounted && data?.user?.image ? (
                 <AvatarImage src={data.user.image} alt={name} />
