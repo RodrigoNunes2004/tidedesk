@@ -84,15 +84,17 @@ export async function fetchWeatherForecast(
   const end = new Date(now.getTime() + hours * 60 * 60 * 1000);
 
   try {
-    const [marineRes, tideRes] = await Promise.all([
+    // Stormglass v2: /marine/point returns 404 in production. Use /weather/point with
+    // windSpeed,waveHeight params - same data, different endpoint.
+    const [marineOrWeatherRes, tideRes] = await Promise.all([
       fetchFromStormglass<StormglassMarineResponse>(
-        "/marine/point",
+        "/weather/point",
         lat,
         lng,
         apiKey,
         now,
         end,
-        { params: "waveHeight,swellHeight,windSpeed" }
+        { params: "windSpeed,waveHeight" }
       ),
       fetchFromStormglass<StormglassTideResponse>(
         "/tide/sea-level/point",
@@ -104,7 +106,9 @@ export async function fetchWeatherForecast(
       ).catch(() => ({ hours: [] })),
     ]);
 
-    const marineHours = marineRes.hours ?? [];
+    const rawMarine = marineOrWeatherRes as { hours?: StormglassMarineHour[]; data?: StormglassMarineHour[] };
+    const marineHours = rawMarine.hours ?? rawMarine.data ?? [];
+
     const tideByTime = new Map<string, number>();
     for (const h of tideRes.hours ?? []) {
       if (h.time && typeof h.height === "number") {
