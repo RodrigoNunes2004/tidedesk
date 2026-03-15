@@ -4,12 +4,25 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wind, Waves, Loader2 } from "lucide-react";
 import { TidePanel, type TideExtreme } from "./tide-panel";
+import { OceanStatusBar } from "@/components/ocean/OceanStatusBar";
+import { SevenDayForecast } from "./SevenDayForecast";
+import type { ForecastDay } from "@/lib/weather/aggregateSevenDay";
 
 type ForecastPoint = {
   timestamp: string;
   windSpeed: number;
   swellHeight: number;
   tideLevel: number | null;
+};
+
+type OceanStatus = {
+  weather: { icon: string; label: string };
+  swell: number;
+  windSpeed: number;
+  windDirection: string;
+  temperature: number;
+  tideStatus: string | null;
+  moon: { icon: string; label: string };
 };
 
 export function MarineForecastWidget({ compact = false }: { compact?: boolean }) {
@@ -20,6 +33,9 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
   const [windguruSpotId, setWindguruSpotId] = useState<string | null>(null);
   const [tides, setTides] = useState<TideExtreme[]>([]);
   const [timezone, setTimezone] = useState<string>("Pacific/Auckland");
+  const [oceanStatus, setOceanStatus] = useState<OceanStatus | null>(null);
+  const [sevenDayForecast, setSevenDayForecast] = useState<ForecastDay[]>([]);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   useEffect(() => {
     fetch("/api/weather/forecast")
@@ -31,6 +47,9 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
         windguruSpotId?: string | null;
         tides?: TideExtreme[];
         timezone?: string;
+        oceanStatus?: OceanStatus | null;
+        sevenDayForecast?: ForecastDay[];
+        quotaExceeded?: boolean;
       }) => {
         if (json.error) {
           setMessage(json.error);
@@ -44,6 +63,9 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
         setWindguruSpotId(json.windguruSpotId ?? null);
         setTides(json.tides ?? []);
         setTimezone(json.timezone ?? "Pacific/Auckland");
+        setOceanStatus(json.oceanStatus ?? null);
+        setSevenDayForecast(json.sevenDayForecast ?? []);
+        setQuotaExceeded(json.quotaExceeded ?? false);
       })
       .catch(() => setMessage("Failed to load forecast"))
       .finally(() => setLoading(false));
@@ -97,7 +119,23 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
           Wind (kt) · Swell (m) — next {toShow.length}h
         </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6">
+        {quotaExceeded && (
+          <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200 mb-4">
+            Stormglass API daily quota exceeded. Ocean status, tides, and 7-day forecast will show again when the quota resets (daily). Hourly data above may be from cache.
+          </div>
+        )}
+        {oceanStatus && (
+          <OceanStatusBar
+            weather={oceanStatus.weather}
+            swell={oceanStatus.swell}
+            windSpeed={oceanStatus.windSpeed}
+            windDirection={oceanStatus.windDirection}
+            temperature={oceanStatus.temperature}
+            tideStatus={oceanStatus.tideStatus}
+            moon={oceanStatus.moon}
+          />
+        )}
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-1">
           {toShow.map((point) => {
             const d = new Date(point.timestamp);
@@ -154,11 +192,18 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
             </a>
           )}
         </div>
-        <TidePanel tides={tides} timezone={timezone} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-4 min-w-0">
+          <div className="min-w-0">
+            <TidePanel tides={tides} timezone={timezone} />
+          </div>
+          <div className="min-w-0">
+            <SevenDayForecast forecast={sevenDayForecast} timezone={timezone} />
+          </div>
+        </div>
         {windguruSpotId && (
-          <div className="mt-4">
+          <div className="mt-4 overflow-x-auto">
             <p className="text-xs text-muted-foreground mb-2">WindGuru forecast</p>
-            <div className="rounded-lg border overflow-hidden bg-muted/30">
+            <div className="rounded-lg border overflow-x-auto bg-muted/30 min-w-0">
               <iframe
                 title="WindGuru forecast"
                 src={`https://www.windguru.cz/widget-fcst-iframe.php?s=${encodeURIComponent(windguruSpotId)}&p=WINDSPD,GUST,MWINDSPD,SMER,TMP,FLHGT,RATING&wj=knots&tj=c&fhours=168&m=3&vt=forecasts&odh=0&doh=24`}

@@ -178,6 +178,118 @@ export async function fetchTideExtremes(
     return res.data ?? [];
   } catch (err) {
     console.error("Stormglass tide extremes fetch error:", err);
+    if (err instanceof Error && /402|quota exceeded/i.test(err.message)) {
+      throw err;
+    }
+    return [];
+  }
+}
+
+/** Extended hourly point for 7-day forecast (air temp, cloud, precip, wind dir). windSpeed in knots. */
+export type SevenDayHour = {
+  time: string;
+  airTemperature: number;
+  cloudCover: number;
+  precipitation: number;
+  windSpeed: number;
+  windDirection: number;
+  swellHeight: number;
+};
+
+type StormglassWeatherHour = {
+  time: string;
+  airTemperature?: { noaa?: number; sg?: number };
+  cloudCover?: { noaa?: number; sg?: number };
+  precipitation?: { noaa?: number; sg?: number };
+  windSpeed?: { noaa?: number; sg?: number; icon?: number };
+  windDirection?: { noaa?: number; sg?: number; icon?: number };
+  waveHeight?: { noaa?: number; sg?: number };
+  swellHeight?: { noaa?: number; sg?: number };
+};
+
+type StormglassWeatherResponse = {
+  hours?: StormglassWeatherHour[];
+  data?: StormglassWeatherHour[];
+};
+
+const MPS_TO_KNOTS = 1.94384;
+
+/**
+ * Fetch 7-day weather forecast (168 hours) with temp, cloud, precip, wind.
+ * Stormglass returns windSpeed in m/s; we convert to knots.
+ */
+export async function fetchSevenDayWeather(
+  lat: number,
+  lng: number
+): Promise<SevenDayHour[]> {
+  const apiKey = process.env.STORMGLASS_API_KEY;
+  if (!apiKey) {
+    console.warn("Stormglass: STORMGLASS_API_KEY not set");
+    return [];
+  }
+
+  const now = new Date();
+  const end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  try {
+    const res = await fetchFromStormglass<StormglassWeatherResponse>(
+      "/weather/point",
+      lat,
+      lng,
+      apiKey,
+      now,
+      end,
+      {
+        params: "airTemperature,cloudCover,precipitation,windSpeed,windDirection,waveHeight",
+      }
+    );
+
+    const hours = res.hours ?? res.data ?? [];
+    return hours.map((h) => {
+      const airTemp =
+        (typeof h.airTemperature === "object"
+          ? h.airTemperature?.noaa ?? h.airTemperature?.sg
+          : h.airTemperature) ?? 0;
+      const cloud =
+        (typeof h.cloudCover === "object"
+          ? h.cloudCover?.noaa ?? h.cloudCover?.sg
+          : h.cloudCover) ?? 0;
+      const precip =
+        (typeof h.precipitation === "object"
+          ? h.precipitation?.noaa ?? h.precipitation?.sg
+          : h.precipitation) ?? 0;
+      const windMs =
+        (typeof h.windSpeed === "object"
+          ? h.windSpeed?.noaa ?? h.windSpeed?.sg ?? h.windSpeed?.icon
+          : h.windSpeed) ?? 0;
+      const windDir =
+        (typeof h.windDirection === "object"
+          ? h.windDirection?.noaa ?? h.windDirection?.sg ?? h.windDirection?.icon
+          : h.windDirection) ?? 0;
+      const swell =
+        (typeof h.swellHeight === "object"
+          ? h.swellHeight?.noaa ?? h.swellHeight?.sg
+          : h.swellHeight) ??
+        (typeof h.waveHeight === "object"
+          ? h.waveHeight?.noaa ?? h.waveHeight?.sg
+          : h.waveHeight) ??
+        0;
+
+      return {
+        time: h.time,
+        airTemperature: Number(airTemp),
+        cloudCover: Number(cloud),
+        precipitation: Number(precip),
+        windSpeed: Number(windMs) * MPS_TO_KNOTS,
+        windDirection: Number(windDir),
+        swellHeight: Number(swell),
+      };
+    });
+  } catch (err) {
+    console.error("Stormglass 7-day fetch error:", err);
+    if (err instanceof Error && /402|quota exceeded/i.test(err.message)) {
+      throw err;
+    }
     return [];
   }
 }
