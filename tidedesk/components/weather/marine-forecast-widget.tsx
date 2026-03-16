@@ -136,7 +136,7 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
             moon={oceanStatus.moon}
           />
         )}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1">
+        <div className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 -mx-1 px-1 scroll-smooth snap-x snap-mandatory">
           {toShow.map((point) => {
             const d = new Date(point.timestamp);
             const isToday = d.toDateString() === now.toDateString();
@@ -144,7 +144,7 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
             return (
               <div
                 key={point.timestamp}
-                className={`flex shrink-0 flex-col items-center rounded-lg border px-3 py-2 min-w-[72px] ${
+                className={`flex shrink-0 flex-col items-center rounded-lg border px-3 py-2 min-w-[72px] snap-start ${
                   isPast
                     ? "border-transparent bg-muted/50 opacity-60"
                     : "border-border bg-card"
@@ -177,20 +177,22 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
             );
           })}
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <p className="text-xs text-muted-foreground">
-            Data from Stormglass. Wind in knots, swell in metres.
-          </p>
-          {windguruSpotId && (
-            <a
-              href={`https://www.windguru.cz/${windguruSpotId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline"
-            >
-              View on WindGuru →
-            </a>
-          )}
+        <div className="mt-2 overflow-x-auto overflow-y-hidden -mx-1 px-1">
+          <div className="flex items-center gap-2 min-w-max sm:min-w-0 sm:flex-wrap">
+            <p className="text-xs text-muted-foreground shrink-0">
+              Data from Stormglass. Wind in knots, swell in metres.
+            </p>
+            {windguruSpotId && (
+              <a
+                href={`https://www.windguru.cz/${windguruSpotId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline shrink-0 whitespace-nowrap"
+              >
+                View on WindGuru →
+              </a>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-4 min-w-0">
           <div className="min-w-0">
@@ -201,14 +203,13 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
           </div>
         </div>
         {windguruSpotId && (
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4 overflow-x-auto -mx-1 px-1">
             <p className="text-xs text-muted-foreground mb-2">WindGuru forecast</p>
-            <div className="rounded-lg border overflow-x-auto bg-muted/30 min-w-0">
+            <div className="rounded-lg border overflow-x-auto bg-muted/30">
               <iframe
                 title="WindGuru forecast"
                 src={`https://www.windguru.cz/widget-fcst-iframe.php?s=${encodeURIComponent(windguruSpotId)}&p=WINDSPD,GUST,MWINDSPD,SMER,TMP,FLHGT,RATING&wj=knots&tj=c&fhours=168&m=3&vt=forecasts&odh=0&doh=24`}
-                className="w-full border-0"
-                style={{ height: "280px", minHeight: "200px" }}
+                className="h-[280px] min-h-[200px] min-w-[900px] w-full border-0"
               />
             </div>
           </div>
