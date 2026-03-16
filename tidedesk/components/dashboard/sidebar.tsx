@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useDashboardContext } from "@/lib/dashboard-context";
 import { hasFeature } from "@/lib/tiers";
 import {
+  BarChart3,
   CalendarDays,
   LayoutDashboard,
   Receipt,
@@ -31,6 +32,7 @@ const fullNav: { href: string; label: string; icon: typeof LayoutDashboard; role
   { href: "/equipment", label: "Equipment", icon: Waves, roles: ["OWNER", "STAFF"] },
   { href: "/instructors", label: "Instructors", icon: UserCircle, roles: ["OWNER", "STAFF"] },
   { href: "/revenue", label: "Revenue", icon: Receipt, roles: ["OWNER", "STAFF"] },
+  { href: "/analytics", label: "Analytics", icon: BarChart3, roles: ["OWNER", "STAFF"], feature: "analytics" },
 ];
 
 export function DashboardSidebar({ role }: { role: UserRole }) {

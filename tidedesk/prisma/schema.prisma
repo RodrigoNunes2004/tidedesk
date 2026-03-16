@@ -55,6 +55,26 @@ model Business {
   weatherSnapshots WeatherSnapshot[]
   apiKeys        ApiKey[]
   webhookEndpoints WebhookEndpoint[]
+  dailyAnalytics DailyAnalytics[]
+}
+
+model DailyAnalytics {
+  id           String   @id @default(cuid())
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId   String
+  date         DateTime @db.Date
+
+  bookings     Int
+  revenue      Float
+  revenueLessons Float  @default(0)  // Paid payments for bookings
+  revenueRentals Float  @default(0)  // Paid payments for rentals
+  students     Int
+  utilization  Float
+
+  createdAt    DateTime @default(now())
+
+  @@unique([businessId, date])
+  @@index([businessId, date])
 }
 
 model WeatherSnapshot {
@@ -73,6 +93,18 @@ model WeatherSnapshot {
 
   @@unique([businessId, latitude, longitude, timestamp])
   @@index([businessId, timestamp])
+}
+
+/// Location-based weather cache. Populated by cron only; users never trigger Stormglass.
+/// Rounded lat/lng (~11m) so nearby schools share cache. Cuts API usage ~10x.
+model WeatherCache {
+  id        String   @id @default(cuid())
+  lat       Decimal  @db.Decimal(9, 4)
+  lng       Decimal  @db.Decimal(9, 4)
+  data      Json
+  fetchedAt DateTime @default(now())
+  @@unique([lat, lng])
+  @@index([lat, lng])
 }
 
 model User {

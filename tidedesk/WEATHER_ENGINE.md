@@ -5,6 +5,22 @@
 
 ---
 
+## Scalable Architecture (March 2026)
+
+**Users never trigger Stormglass.** All API calls happen in a scheduled cron job.
+
+```
+Stormglass API → Cron (hourly) → WeatherCache (DB) → Dashboard / Beach / Bookings
+```
+
+- **WeatherCache** – Location-based cache (rounded lat/lng ~11m). Nearby schools share one entry.
+- **Cron** – Runs hourly (`0 * * * *`). Refreshes cache for all unique locations, then sends WEATHER_ALERT if needed.
+- **Forecast API** – Reads from `getWeatherFromCache()` only. No Stormglass calls on page load.
+
+**API usage:** `N locations × 24 refresh/day` instead of `N schools × users × page loads`. With 30 spots and 150 schools: **~720 calls/day** vs **7500+**.
+
+---
+
 ## What Was Built
 
 ### 1. WeatherSnapshot model (Prisma)

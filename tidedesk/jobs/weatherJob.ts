@@ -1,20 +1,18 @@
 /**
- * Weather job – fetches marine weather, caches it, sends WEATHER_ALERT when conditions warrant.
+ * Weather job – refreshes cache, then sends WEATHER_ALERT from cached data.
  * Run via Vercel Cron: GET /api/cron/weather
+ *
+ * Users never trigger Stormglass; only this cron does.
  */
 import { prisma } from "@/lib/prisma";
-import {
-  getCachedOrFetchWeather,
-  buildWeatherAlertMessage,
-} from "@/modules/weather";
+import { getWeatherFromCache } from "@/lib/weather/weatherCache";
+import { buildWeatherAlertMessage } from "@/modules/weather";
+import type { WeatherSnapshotRow } from "@/modules/weather";
 import { sendNotification } from "@/modules/notifications/notificationService";
 
-// Adapter-based client loses some model types in IDE; use asserted client (see prisma/seed.ts)
+// Adapter-based client loses some model types in IDE
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
-
-const WIND_ALERT_KT = 25;
-const SWELL_ALERT_M = 2;
 
 export async function runWeatherJob() {
   const businesses = await db.business.findMany({
@@ -40,17 +38,24 @@ export async function runWeatherJob() {
     if (lat == null || lng == null) continue;
 
     try {
-      const snapshots = await getCachedOrFetchWeather(biz.id, lat, lng, 24);
+      const cached = await getWeatherFromCache(lat, lng);
+      if (!cached?.data?.length) continue;
 
-      for (const point of snapshots) {
-        const message = buildWeatherAlertMessage(point, biz.name);
+      for (const point of cached.data) {
+        const row: WeatherSnapshotRow = {
+          windSpeed: point.windSpeed,
+          swellHeight: point.swellHeight,
+          tideLevel: point.tideLevel,
+          timestamp: new Date(point.timestamp),
+        };
+        const message = buildWeatherAlertMessage(row, biz.name);
         if (!message) continue;
 
         const existing = await db.notification.findFirst({
           where: {
             type: "WEATHER_ALERT",
             businessId: biz.id,
-            metadata: { contains: point.timestamp.toISOString().slice(0, 13) },
+            metadata: { contains: point.timestamp.slice(0, 13) },
           },
         });
         if (existing) continue;
@@ -66,7 +71,7 @@ export async function runWeatherJob() {
               content: message,
               status: "FAILED",
               metadata: JSON.stringify({
-                timestamp: point.timestamp.toISOString(),
+                timestamp: point.timestamp,
                 reason: "No phone or email for business",
               }),
             },
@@ -81,7 +86,7 @@ export async function runWeatherJob() {
           channel,
           recipient,
           content: message,
-          metadata: { timestamp: point.timestamp.toISOString() },
+          metadata: { timestamp: point.timestamp },
         });
         if (ok) alertsSent++;
       }

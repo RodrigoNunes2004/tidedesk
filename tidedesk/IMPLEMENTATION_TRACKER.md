@@ -52,15 +52,14 @@ Track what's done vs planned for each plan tier. Aligns with the three pricing c
 | 1 | Everything in Pro | ✅ | — | — | Inherited |
 | 2 | WindGuru integration | ✅ | Medium | S | Marine forecast (wind/swell) on Dashboard, Bookings, Beach; optional WindGuru spot link |
 | 3 | Offline mode | 🔲 | Medium | L | PWA service worker, work offline |
-| 4 | Advanced analytics | 🔶 | Medium | M | Custom ranges, cohort reports, raw export |
+| 4 | Advanced analytics | ✅ | Medium | M | /analytics: revenue, bookings, students, instructors, equipment, alerts |
 | 5 | POS beach mode | ✅ | High | M | Tablet UI for quick rental, check-in, return |
 | 6 | API access | ✅ | High | L | REST API, webhooks; unlocks ecosystem integrations |
 | 7 | White label | 🔲 | Low | M | Custom domain, remove TideDesk branding |
 | 8 | Integrations (FareHarbor) | 🔲 | Low | L | External booking sync |
 
-**Premium:** 4/8 done, 2 partial, 2 planned · **Maturity: ~50%**
+**Premium:** 5/8 done, 2 planned · **Maturity: ~63%**
 
----
 
 ## Recommended Sprint Order
 
@@ -71,7 +70,7 @@ Based on impact vs difficulty.
 | ~~10~~ | ~~Deposit payments~~ | ✅ Done | — | — | Higher booking conversions |
 | ~~11~~ | ~~API access~~ | ✅ Done | High | L | REST API (`/api/v1/*`), API keys, webhooks; `booking.created`, `payment.succeeded` |
 | ~~12~~ | ~~POS beach mode~~ | ✅ Done | High | M | `/beach`: today bookings check-in, active rentals return, quick rental |
-| **13** | Advanced analytics | Next | Medium | M | Revenue by lesson, CLV, repeat rate, instructor performance |
+| ~~13~~ | ~~Advanced analytics~~ | ✅ Done | — | — | Revenue by day/lesson, bookings, students, instructors, equipment, alerts |
 | ~~14~~ | ~~WindGuru integration~~ | ✅ Done | — | — | Marine forecast widget on Dashboard, Bookings, Beach; Stormglass data |
 | **15** | White label | — | Low | M | Custom domain, branding; high perceived value |
 | **16** | FareHarbor integration | — | Low | L | External booking imports; more bookings for schools |
@@ -84,7 +83,7 @@ Based on impact vs difficulty.
 |------|--------|------|
 | Starter | 100% | Core SaaS complete |
 | Pro | 100% | All features complete |
-| Premium | ~50% | API, POS beach mode, WindGuru forecast; roadmap for analytics, white label |
+| Premium | ~63% | API, POS beach mode, WindGuru, advanced analytics; roadmap for white label |
 
 **Product insight:** TideDesk's strongest differentiator is the combination of **booking + weather intelligence + equipment tracking**. Most booking platforms don't handle surf school logistics — that's the advantage.
 
@@ -113,6 +112,7 @@ Track these to measure SaaS growth:
 - API access: ApiKey/WebhookEndpoint models, Bearer/X-API-Key auth, v1 bookings/customers/payments, webhook dispatch, settings UI (Premium-gated)
 - POS beach mode: `/beach` tablet UI; check-in today bookings, return active rentals, quick rental (Premium-gated)
 - WindGuru integration: Marine forecast widget (wind/swell) on Dashboard, Bookings, Beach; optional WindGuru spot ID in Settings; Premium-gated
+- Advanced analytics: /analytics dashboard; revenue by day/lesson, bookings chart, student metrics, instructor labor %, equipment utilization, smart alerts; DailyAnalytics cron; Premium-gated
 
 ---
 
@@ -126,6 +126,7 @@ Track these to measure SaaS growth:
 | **Weather widget fallback** | ✅ | Shows "No forecast data available" instead of vanishing when Stormglass returns empty |
 | **Weather API message** | ✅ | Returns message when data empty for better diagnostics |
 | **Premium testing checklist** | ✅ | PREMIUM_TESTING_CHECKLIST.md for end-to-end testing |
+| **Advanced analytics** | ✅ | /analytics: revenue, bookings, students, instructors, equipment, alerts; DailyAnalytics cron; Premium-gated |
 
 ---
 
@@ -142,3 +143,5 @@ Track these to measure SaaS growth:
 | 2026-03-11 | Upgrade flow: /api/stripe/checkout/upgrade for existing users; Billing section shows Subscribe to Premium when no subscription; Stripe webhook links subscription to business; marine forecast empty-state fix |
 | 2026-03-11 | In-settings upgrade flow: checkout/upgrade, subscription webhook, BillingSection upgrade UI |
 | 2026-03-11 | Weather widget: empty-state fallback, API message when Stormglass returns empty; PREMIUM_TESTING_CHECKLIST |
+| 2026-03-16 | Sprint 13: Advanced analytics; /analytics dashboard; revenue, bookings, students, instructors, equipment, alerts; DailyAnalytics cron; Premium-gated |
+| 2026-03-16 | Advanced analytics: /analytics dashboard; modules/analytics; DailyAnalytics + cron; Premium-gated |
