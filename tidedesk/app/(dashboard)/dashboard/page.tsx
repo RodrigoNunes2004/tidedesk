@@ -61,7 +61,7 @@ export default async function DashboardPage() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {hasFeature(tier, "windguru") && (
-        <div className="md:col-span-2 lg:col-span-4">
+        <div className="md:col-span-2 lg:col-span-4 min-w-0">
           <MarineForecastWidget />
         </div>
       )}

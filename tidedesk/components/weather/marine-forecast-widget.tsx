@@ -109,7 +109,7 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
   const now = new Date();
 
   return (
-    <Card>
+    <Card className="overflow-visible">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Wind className="size-4 text-primary" />
@@ -136,7 +136,10 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
             moon={oceanStatus.moon}
           />
         )}
-        <div className="flex gap-2 overflow-x-auto overflow-y-hidden pb-2 -mx-1 px-1 scroll-smooth snap-x snap-mandatory">
+        <div
+          className="flex flex-nowrap gap-2 overflow-x-scroll overflow-y-hidden pb-2 -mx-1 px-1 scroll-smooth snap-x snap-mandatory w-full"
+          style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        >
           {toShow.map((point) => {
             const d = new Date(point.timestamp);
             const isToday = d.toDateString() === now.toDateString();
@@ -203,9 +206,12 @@ export function MarineForecastWidget({ compact = false }: { compact?: boolean })
           </div>
         </div>
         {windguruSpotId && (
-          <div className="mt-4 overflow-x-auto -mx-1 px-1">
+          <div
+            className="mt-4 overflow-x-scroll overflow-y-hidden -mx-1 px-1 w-full"
+            style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+          >
             <p className="text-xs text-muted-foreground mb-2">WindGuru forecast</p>
-            <div className="rounded-lg border overflow-x-auto bg-muted/30">
+            <div className="rounded-lg border overflow-hidden bg-muted/30 inline-block">
               <iframe
                 title="WindGuru forecast"
                 src={`https://www.windguru.cz/widget-fcst-iframe.php?s=${encodeURIComponent(windguruSpotId)}&p=WINDSPD,GUST,MWINDSPD,SMER,TMP,FLHGT,RATING&wj=knots&tj=c&fhours=168&m=3&vt=forecasts&odh=0&doh=24`}
