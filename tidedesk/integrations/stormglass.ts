@@ -19,17 +19,19 @@ type StormglassMarineHour = {
   windSpeed?: { noaa?: number; icon?: number };
 };
 
-type StormglassTideHour = {
+/** Tide sea-level returns data[] with source keys (sg, noaa) for level, not "height". */
+type StormglassTideSeaLevelRow = {
   time: string;
-  height?: number;
+  [source: string]: unknown; // e.g. sg: -0.62, noaa: 0.16
 };
 
 type StormglassMarineResponse = {
   hours?: StormglassMarineHour[];
+  data?: StormglassMarineHour[];
 };
 
-type StormglassTideResponse = {
-  hours?: StormglassTideHour[];
+type StormglassTideSeaLevelResponse = {
+  data?: StormglassTideSeaLevelRow[];
 };
 
 async function fetchFromStormglass<T>(
@@ -65,6 +67,14 @@ async function fetchFromStormglass<T>(
   return res.json() as Promise<T>;
 }
 
+/** Extract sea level from tide row; Stormglass uses source keys (sg, noaa) not "height". */
+function extractTideLevel(row: StormglassTideSeaLevelRow): number | undefined {
+  for (const [k, v] of Object.entries(row)) {
+    if (k !== "time" && typeof v === "number") return v;
+  }
+  return undefined;
+}
+
 /**
  * Fetch marine weather (wind, swell) and tide for a location.
  * Returns hourly points for the next 24 hours by default.
@@ -96,24 +106,24 @@ export async function fetchWeatherForecast(
         end,
         { params: "windSpeed,waveHeight" }
       ),
-      fetchFromStormglass<StormglassTideResponse>(
+      fetchFromStormglass<StormglassTideSeaLevelResponse>(
         "/tide/sea-level/point",
         lat,
         lng,
         apiKey,
         now,
         end
-      ).catch(() => ({ hours: [] })),
+      ).catch(() => ({ data: [] })),
     ]);
 
-    const rawMarine = marineOrWeatherRes as { hours?: StormglassMarineHour[]; data?: StormglassMarineHour[] };
+    const rawMarine = marineOrWeatherRes as StormglassMarineResponse;
     const marineHours = rawMarine.hours ?? rawMarine.data ?? [];
 
     const tideByTime = new Map<string, number>();
-    for (const h of tideRes.hours ?? []) {
-      if (h.time && typeof h.height === "number") {
-        tideByTime.set(h.time, h.height);
-      }
+    for (const row of tideRes.data ?? []) {
+      if (!row.time) continue;
+      const level = extractTideLevel(row);
+      if (level !== undefined) tideByTime.set(row.time, level);
     }
 
     const points: WeatherPoint[] = marineHours.map((h) => {
