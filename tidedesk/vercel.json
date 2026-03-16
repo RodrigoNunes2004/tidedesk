@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/cron/weather",
-      "schedule": "0 * * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/trial-reminders",
