@@ -49,25 +49,53 @@ const features = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
-      <div
-        className="relative bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url(/TD_img.png)" }}
-      >
-        <div className="absolute inset-0 bg-white/70" aria-hidden />
+      <div className="relative w-full max-w-none overflow-hidden">
+        {/* Photo hero: tablets/desktop only — full asset reads busy on small phones */}
+        <div
+          className="pointer-events-none absolute inset-0 hidden bg-cover bg-center bg-no-repeat md:block 2xl:bg-position-[center_40%]"
+          style={{ backgroundImage: "url(/TD_img.png)" }}
+          aria-hidden
+        />
+        {/* Mobile: same hero art, very soft + cropped so it reads as texture (not busy) */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-size-[min(280%,1200px)_auto] bg-position-[50%_100%] bg-no-repeat opacity-[0.34] saturate-110 md:hidden"
+          style={{ backgroundImage: "url(/TD_img.png)" }}
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_130%_90%_at_50%_-18%,rgba(14,165,233,0.22)_0%,transparent_55%)] md:hidden"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(186,230,253,0.5)_0%,rgba(240,249,255,0.92)_32%,var(--background)_58%,color-mix(in_srgb,var(--muted)_75%,var(--background))_100%)] md:hidden"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-white/70 max-md:bg-white/[0.07]"
+          aria-hidden
+        />
         <LandingHeader />
 
-        <section className="relative container mx-auto px-4 pt-6 pb-24 sm:py-16 md:py-24 lg:py-32 text-center">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl px-2">
+        <section className="relative mx-auto w-full max-w-none px-4 pt-8 pb-24 text-center sm:px-6 sm:pt-16 sm:pb-20 md:pt-24 md:pb-32 lg:px-8 lg:pt-28 lg:pb-44 xl:pt-32 xl:pb-52 2xl:pb-60 2xl:pt-32">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl px-2">
             TideDesk
           </h1>
-          <p className="mt-3 sm:mt-4 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-2">
+          {/* One line of copy on small screens; split headline + sub from md up */}
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground max-w-md mx-auto px-2 md:hidden">
+            <span className="font-semibold text-foreground">
+              Management software for surf schools
+            </span>
+            {" "}
+            — bookings, equipment, instructors and revenue in one place.
+          </p>
+          <p className="mt-3 sm:mt-4 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-2 hidden md:block">
             Management Software for Surf Schools
           </p>
-          <p className="mt-2 sm:mt-2 text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto px-2">
+          <p className="mt-2 sm:mt-2 text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto px-2 hidden md:block">
             Bookings, equipment tracking, instructors and revenue — all in one
             place.
           </p>
-          <div className="mt-6 sm:mt-8 md:mt-10">
+          <div className="mt-8 sm:mt-8 md:mt-10">
             <StartTrialButton size="lg" />
           </div>
         </section>
